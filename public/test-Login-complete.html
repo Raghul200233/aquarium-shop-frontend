@@ -1,0 +1,139 @@
+<!-- public/test-login-complete.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Login Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        h1 { color: #333; }
+        .test-card { 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            padding: 20px; 
+            margin-bottom: 20px;
+            background: #f9f9f9;
+        }
+        button { 
+            padding: 10px 20px; 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer;
+            margin: 5px;
+        }
+        pre { 
+            background: #f4f4f4; 
+            padding: 10px; 
+            border-radius: 4px; 
+            overflow: auto;
+        }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Admin Login Test</h1>
+    
+    <div class="test-card">
+        <h3>Test All Possible Admin Emails</h3>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>Manual Login Test</h3>
+        <input type="email" id="email" placeholder="Email" value="admin@eliteaquarium.com" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+        <input type="password" id="password" placeholder="Password" value="Admin@123" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+        <button onclick="testLogin()">Test Login</button>
+        <div id="manualResult"></div>
+    </div>
+
+    <script>
+        const testEmails = [
+            'admin@eliteaquarium.com',
+            'admin@aquaworld.com',
+            'admin@example.com',
+            'admin@gmail.com',
+            'admin@admin.com',
+            'eliteaquarium.com',
+            'admin'
+        ];
+
+        const testPassword = 'Admin@123';
+
+        async function testAll() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing all combinations...</p>';
+
+            for (const email of testEmails) {
+                try {
+                    const response = await fetch('http://localhost:5000/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            email: email, 
+                            password: testPassword 
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    const resultDiv = document.createElement('div');
+                    resultDiv.style.padding = '10px';
+                    resultDiv.style.margin = '5px 0';
+                    resultDiv.style.borderRadius = '4px';
+                    resultDiv.style.border = '1px solid #ddd';
+                    
+                    if (data.success) {
+                        resultDiv.innerHTML = `✅ <strong>${email}</strong> - SUCCESS! Token received`;
+                        resultDiv.style.background = '#d4edda';
+                        resultDiv.style.color = '#155724';
+                    } else {
+                        resultDiv.innerHTML = `❌ <strong>${email}</strong> - Failed: ${data.message || 'Invalid credentials'}`;
+                        resultDiv.style.background = '#f8d7da';
+                        resultDiv.style.color = '#721c24';
+                    }
+                    
+                    resultsDiv.appendChild(resultDiv);
+                } catch (error) {
+                    console.error('Error testing', email, error);
+                }
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('manualResult');
+            
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ LOGIN SUCCESSFUL!</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ LOGIN FAILED: ${data.message || 'Invalid credentials'}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Run tests automatically on page load
+        window.onload = testAll;
+    </script>
+</body>
+</html>
