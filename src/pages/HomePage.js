@@ -89,75 +89,46 @@ const categories = [
   }
 ];
 
-const HomePage = () => {
-  console.log('API URL:', process.env.REACT_APP_API_URL);
+  const HomePage = () => {
+  console.log('API URL:', process.env.REACT_APP_API_URL); // Debug line
 
-  // eslint-disable-next-line no-unused-vars
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categoryProducts, setCategoryProducts] = useState({});
-  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [categoryLoading, setCategoryLoading] = useState({});
-  // eslint-disable-next-line no-unused-vars
   const [newArrivals, setNewArrivals] = useState([]);
-  // eslint-disable-next-line no-unused-vars
   const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchFeaturedProducts();
-    fetchNewArrivals();
-    // eslint-disable-next-line
-    categories.forEach(category => {
-      fetchProductsByCategory(category.name);
-    });
-  }, []);
+// Add this for debugging
+useEffect(() => {
+  console.log('🔍 HomePage mounted');
+  console.log('API URL:', config.API_URL);
+  console.log('Categories to fetch:', categories.map(c => c.name));
+}, []);
 
-  const fetchFeaturedProducts = async () => {
-    try {
-      const response = await axios.get(`${config.API_URL}/api/products/featured`);
-      console.log('Featured products:', response.data);
-      setFeaturedProducts(response.data.products || []);
-    } catch (error) {
-      console.error('Error fetching featured products:', error);
-      setFeaturedProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchNewArrivals = async () => {
-    try {
-      const response = await axios.get(
-        `${config.API_URL}/api/products?sort=createdAt&limit=8`
-      );
-      console.log('New arrivals response:', response.data);
-      setNewArrivals(response.data.products || []);
-    } catch (error) {
-      console.error('Error fetching new arrivals:', error);
-      setNewArrivals([]);
-    } finally {
-      setNewArrivalsLoading(false);
-    }
-  };
-
-  // eslint-disable-next-line
-  const fetchProductsByCategory = async (categoryName) => {
-    setCategoryLoading(prev => ({ ...prev, [categoryName]: true }));
-    try {
-      const response = await axios.get(
-        `${config.API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`
-      );
-      console.log(`${categoryName} products:`, response.data);
-      setCategoryProducts(prev => ({
-        ...prev,
-        [categoryName]: response.data.products || []
-      }));
-    } catch (error) {
-      console.error(`Error fetching ${categoryName} products:`, error);
-    } finally {
-      setCategoryLoading(prev => ({ ...prev, [categoryName]: false }));
-    }
-  };
+// And in your fetchProductsByCategory function, add more logs:
+const fetchProductsByCategory = async (categoryName) => {
+  console.log(`🔍 Fetching ${categoryName}...`);
+  setCategoryLoading(prev => ({ ...prev, [categoryName]: true }));
+  try {
+    const url = `${config.API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`;
+    console.log(`📡 Fetch URL:`, url);
+    
+    const response = await axios.get(url);
+    console.log(`✅ ${categoryName} response:`, response.data);
+    console.log(`✅ ${categoryName} products:`, response.data.products);
+    
+    setCategoryProducts(prev => ({
+      ...prev,
+      [categoryName]: response.data.products || []
+    }));
+  } catch (error) {
+    console.error(`❌ Error fetching ${categoryName}:`, error.message);
+    console.error(`❌ Full error:`, error);
+  } finally {
+    setCategoryLoading(prev => ({ ...prev, [categoryName]: false }));
+  }
+};
 
   const heroSlides = [
     {
@@ -1011,7 +982,6 @@ const HomePage = () => {
         .to-amber-50 { --to-color: #fffbeb; }
         .from-green-50 { --from-color: #f0fdf4; }
         .to-emerald-50 { --to-color: #ecfdf5; }
-        
         .new-arrivals-section {
           padding: 60px 0;
           background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
@@ -1088,71 +1058,17 @@ const HomePage = () => {
           }
         }
         
-        /* FIXED: Products Swiper Styles */
         .products-swiper {
           width: 100%;
           padding-bottom: 8px;
-          overflow: visible !important;
-        }
-
-        .products-swiper .swiper-wrapper {
-          display: flex;
-          align-items: stretch;
         }
 
         .products-swiper .swiper-slide {
-          height: auto !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          display: block !important;
+          height: auto;
         }
 
         .products-swiper .swiper-slide > * {
           height: 100%;
-        }
-
-        /* FIXED: Image visibility styles */
-        .product-image {
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          max-width: 100%;
-          height: auto;
-        }
-
-        .product-image.img-hidden {
-          opacity: 0 !important;
-          visibility: hidden !important;
-          position: absolute;
-        }
-
-        .product-image.img-fade-in {
-          opacity: 1 !important;
-          visibility: visible !important;
-          animation: fadeIn 0.3s ease-in;
-          position: relative;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        /* FIXED: Image container */
-        .image-wrapper {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          min-height: 200px;
-        }
-
-        .product-image-container {
-          position: relative;
-          overflow: hidden;
-          background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-          aspect-ratio: 1 / 1;
-          min-height: 200px;
         }
       `}</style>
     </>
