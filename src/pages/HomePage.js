@@ -90,45 +90,74 @@ const categories = [
 ];
 
   const HomePage = () => {
-  console.log('API URL:', process.env.REACT_APP_API_URL); // Debug line
+  console.log('API URL:', process.env.REACT_APP_API_URL);
 
+  // eslint-disable-next-line no-unused-vars
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categoryProducts, setCategoryProducts] = useState({});
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [categoryLoading, setCategoryLoading] = useState({});
+  // eslint-disable-next-line no-unused-vars
   const [newArrivals, setNewArrivals] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
 
-// Add this for debugging
-useEffect(() => {
-  console.log('🔍 HomePage mounted');
-  console.log('API URL:', config.API_URL);
-  console.log('Categories to fetch:', categories.map(c => c.name));
-}, []);
+  useEffect(() => {
+    fetchFeaturedProducts();
+    fetchNewArrivals();
+    // eslint-disable-next-line
+    categories.forEach(category => {
+      fetchProductsByCategory(category.name);
+    });
+  }, []);
 
-// And in your fetchProductsByCategory function, add more logs:
-const fetchProductsByCategory = async (categoryName) => {
-  console.log(`🔍 Fetching ${categoryName}...`);
-  setCategoryLoading(prev => ({ ...prev, [categoryName]: true }));
-  try {
-    const url = `${config.API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`;
-    console.log(`📡 Fetch URL:`, url);
-    
-    const response = await axios.get(url);
-    console.log(`✅ ${categoryName} response:`, response.data);
-    console.log(`✅ ${categoryName} products:`, response.data.products);
-    
-    setCategoryProducts(prev => ({
-      ...prev,
-      [categoryName]: response.data.products || []
-    }));
-  } catch (error) {
-    console.error(`❌ Error fetching ${categoryName}:`, error.message);
-    console.error(`❌ Full error:`, error);
-  } finally {
-    setCategoryLoading(prev => ({ ...prev, [categoryName]: false }));
-  }
-};
+  const fetchFeaturedProducts = async () => {
+    try {
+      const response = await axios.get(`${config.API_URL}/api/products/featured`);
+      console.log('Featured products:', response.data);
+      setFeaturedProducts(response.data.products || []);
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+      setFeaturedProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchNewArrivals = async () => {
+    try {
+      const response = await axios.get(
+        `${config.API_URL}/api/products?sort=createdAt&limit=8`
+      );
+      console.log('New arrivals response:', response.data);
+      setNewArrivals(response.data.products || []);
+    } catch (error) {
+      console.error('Error fetching new arrivals:', error);
+      setNewArrivals([]);
+    } finally {
+      setNewArrivalsLoading(false);
+    }
+  };
+
+  // eslint-disable-next-line
+  const fetchProductsByCategory = async (categoryName) => {
+    setCategoryLoading(prev => ({ ...prev, [categoryName]: true }));
+    try {
+      const response = await axios.get(
+        `${config.API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`
+      );
+      console.log(`${categoryName} products:`, response.data);
+      setCategoryProducts(prev => ({
+        ...prev,
+        [categoryName]: response.data.products || []
+      }));
+    } catch (error) {
+      console.error(`Error fetching ${categoryName} products:`, error);
+    } finally {
+      setCategoryLoading(prev => ({ ...prev, [categoryName]: false }));
+    }
+  };
 
   const heroSlides = [
     {
