@@ -13,6 +13,9 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
+// Add this at the very top of your HomePage component, before any other code
+console.log('🔥 API_URL from config:', config.API_URL);
+
 const categories = [
   { 
     id: 1, 
@@ -96,64 +99,36 @@ const categories = [
   const [newArrivals, setNewArrivals] = useState([]);
   const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchFeaturedProducts();
-    fetchNewArrivals();
-    // Fetch products for each category
-    categories.forEach(category => {
-      fetchProductsByCategory(category.name);
-    });
-  }, []);
+// Add this for debugging
+useEffect(() => {
+  console.log('🔍 HomePage mounted');
+  console.log('API URL:', config.API_URL);
+  console.log('Categories to fetch:', categories.map(c => c.name));
+}, []);
 
-  const fetchFeaturedProducts = async () => {
-    try {
-      const response = await axios.get(`${config.API_URL}/api/products/featured`);
-      console.log('Featured products:', response.data); // Debug line
-      setFeaturedProducts(response.data.products || []);
-    } catch (error) {
-      console.error('Error fetching featured products:', error);
-      setFeaturedProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchNewArrivals = async () => {
-    try {
-      const response = await axios.get(
-        `${config.API_URL}/api/products?sort=createdAt&limit=8`
-      );
-      console.log('New arrivals response:', response.data);
-      setNewArrivals(response.data.products || []);
-    } catch (error) {
-      console.error('Error fetching new arrivals:', error);
-      setNewArrivals([]);
-    } finally {
-      setNewArrivalsLoading(false);
-    }
-  };
-
-  const fetchProductsByCategory = async (categoryName) => {
-    setCategoryLoading(prev => ({ ...prev, [categoryName]: true }));
-    try {
-      const response = await axios.get(
-        `${config.API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`
-      );
-      console.log(`${categoryName} products:`, response.data); // Debug line
-      setCategoryProducts(prev => ({
-        ...prev,
-        [categoryName]: response.data.products || []
-      }));
-    } catch (error) {
-      console.error(`Error fetching ${categoryName} products:`, error);
-      setCategoryProducts(prev => ({
-        ...prev,
-        [categoryName]: []
-      }));
-    } finally {
-      setCategoryLoading(prev => ({ ...prev, [categoryName]: false }));
-    }
-  };
+// And in your fetchProductsByCategory function, add more logs:
+const fetchProductsByCategory = async (categoryName) => {
+  console.log(`🔍 Fetching ${categoryName}...`);
+  setCategoryLoading(prev => ({ ...prev, [categoryName]: true }));
+  try {
+    const url = `${config.API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`;
+    console.log(`📡 Fetch URL:`, url);
+    
+    const response = await axios.get(url);
+    console.log(`✅ ${categoryName} response:`, response.data);
+    console.log(`✅ ${categoryName} products:`, response.data.products);
+    
+    setCategoryProducts(prev => ({
+      ...prev,
+      [categoryName]: response.data.products || []
+    }));
+  } catch (error) {
+    console.error(`❌ Error fetching ${categoryName}:`, error.message);
+    console.error(`❌ Full error:`, error);
+  } finally {
+    setCategoryLoading(prev => ({ ...prev, [categoryName]: false }));
+  }
+};
 
   const heroSlides = [
     {
@@ -1007,6 +982,7 @@ const categories = [
         .to-amber-50 { --to-color: #fffbeb; }
         .from-green-50 { --from-color: #f0fdf4; }
         .to-emerald-50 { --to-color: #ecfdf5; }
+        
         .new-arrivals-section {
           padding: 60px 0;
           background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
@@ -1083,17 +1059,71 @@ const categories = [
           }
         }
         
+        /* FIXED: Products Swiper Styles */
         .products-swiper {
           width: 100%;
           padding-bottom: 8px;
+          overflow: visible !important;
+        }
+
+        .products-swiper .swiper-wrapper {
+          display: flex;
+          align-items: stretch;
         }
 
         .products-swiper .swiper-slide {
-          height: auto;
+          height: auto !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          display: block !important;
         }
 
         .products-swiper .swiper-slide > * {
           height: 100%;
+        }
+
+        /* FIXED: Image visibility styles */
+        .product-image {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          max-width: 100%;
+          height: auto;
+        }
+
+        .product-image.img-hidden {
+          opacity: 0 !important;
+          visibility: hidden !important;
+          position: absolute;
+        }
+
+        .product-image.img-fade-in {
+          opacity: 1 !important;
+          visibility: visible !important;
+          animation: fadeIn 0.3s ease-in;
+          position: relative;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        /* FIXED: Image container */
+        .image-wrapper {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          min-height: 200px;
+        }
+
+        .product-image-container {
+          position: relative;
+          overflow: hidden;
+          background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+          aspect-ratio: 1 / 1;
+          min-height: 200px;
         }
       `}</style>
     </>
