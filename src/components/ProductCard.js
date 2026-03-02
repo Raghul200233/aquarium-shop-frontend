@@ -9,6 +9,7 @@ const ProductCard = ({ product }) => {
 
 useEffect(() => {
   // Reset states when product changes
+  console.log('🖼️ Product image URL:', product.images?.[0]?.url);
   setImageError(false);
   setImgLoaded(false);
 
