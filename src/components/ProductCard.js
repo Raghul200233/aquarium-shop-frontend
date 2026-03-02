@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import config from '../config';
 
 const ProductCard = ({ product }) => {
   const [imageError, setImageError] = useState(false);
@@ -9,49 +8,35 @@ const ProductCard = ({ product }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
 
 useEffect(() => {
-    // 🔍 DEBUG: Log everything
-  console.log('🎯 ProductCard mounted for:', product.name);
-  console.log('📦 Full product data:', product);
-  console.log('🖼️ Image URL from API:', product.images?.[0]?.url);
-  console.log('📂 Product category:', product.category);
-  
-  // Reset states when product changes
-  console.log('🖼️ Product image URL:', product.images?.[0]?.url);
+  // Reset states
   setImageError(false);
   setImgLoaded(false);
 
+  console.log('🎯 Rendering product:', product.name);
+  console.log('📦 Product data:', product);
+
   if (product.images && product.images[0] && product.images[0].url) {
     let url = product.images[0].url;
+    console.log('🖼️ Original URL:', url);
 
-    // data: URL — validate it's complete
+    // Case 1: Base64 image (starts with data:image)
     if (url.startsWith('data:image')) {
-      if (url.length > 100) {
-        setImageSrc(url);
-      } else {
-        setImageError(true);
-      }
+      console.log('✅ Base64 image detected');
+      setImageSrc(url); // Use directly - no prefix needed!
     }
-    // /uploads/ paths are served by the backend
-    else if (url.startsWith('/uploads/') || url.includes('/uploads/')) {
-      const api = config.API_URL;
-      setImageSrc(`${api}${url.startsWith('/') ? url : '/' + url}`);
-    }
-    // ✅ NEW: /assets/ paths are served by frontend
-    else if (url.startsWith('/assets/')) {
+    // Case 2: Already a full HTTP URL
+    else if (url.startsWith('http')) {
       setImageSrc(url);
     }
-    // Absolute URL (http/https)
-    else if (url.startsWith('http')) {
+    // Case 3: Path starting with /assets/
+    else if (url.includes('/assets/')) {
       setImageSrc(`https://aquarium-shop-frontend.vercel.app${url}`);
     }
-    // Relative path — served by React public folder
-    else if (url.startsWith('/')) {
-      setImageSrc(url);
-    }
-    // Plain filename — map to category folder
+    // Case 4: Plain filename
     else if (!url.includes('/')) {
       let folder = 'fish_foods';
       const cat = product.category?.toLowerCase() || '';
+      
       if (cat.includes('medicine')) folder = 'fish_medicine';
       else if (cat.includes('planted')) folder = 'aquarium_lights';
       else if (cat.includes('light')) folder = 'aquarium_lights';
@@ -61,12 +46,15 @@ useEffect(() => {
       else if (cat.includes('accessories')) folder = 'aquarium_accessories';
       else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
       else if (cat.includes('tank')) folder = 'aquarium_tanks';
-      setImageSrc(`/assets/${folder}/${url}`);
+      
+      setImageSrc(`https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`);
     }
+    // Case 5: Any other path
     else {
-      setImageError(true);
+      setImageSrc(`https://aquarium-shop-frontend.vercel.app${url}`);
     }
   } else {
+    console.log('❌ No image found for:', product.name);
     setImageError(true);
   }
 }, [product]);
