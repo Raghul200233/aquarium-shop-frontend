@@ -9,49 +9,31 @@ const ProductCard = ({ product }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
 
 useEffect(() => {
-    // 🔍 DEBUG: Log everything
-  console.log('🎯 ProductCard mounted for:', product.name);
-  console.log('📦 Full product data:', product);
-  console.log('🖼️ Image URL from API:', product.images?.[0]?.url);
-  console.log('📂 Product category:', product.category);
-  
-  // Reset states when product changes
-  console.log('🖼️ Product image URL:', product.images?.[0]?.url);
+  // Reset states
   setImageError(false);
   setImgLoaded(false);
 
   if (product.images && product.images[0] && product.images[0].url) {
     let url = product.images[0].url;
+    console.log('🖼️ Processing image for:', product.name, 'URL:', url);
 
-    // data: URL — validate it's complete
-    if (url.startsWith('data:image')) {
-      if (url.length > 100) {
-        setImageSrc(url);
-      } else {
-        setImageError(true);
-      }
-    }
-    // /uploads/ paths are served by the backend
-    else if (url.startsWith('/uploads/') || url.includes('/uploads/')) {
-      const api = config.API_URL;
-      setImageSrc(`${api}${url.startsWith('/') ? url : '/' + url}`);
-    }
-    // ✅ NEW: /assets/ paths are served by frontend
-    else if (url.startsWith('/assets/')) {
+    // Case 1: Already a full URL
+    if (url.startsWith('http')) {
       setImageSrc(url);
     }
-    // Absolute URL (http/https)
-    else if (url.startsWith('http')) {
-      setImageSrc(`https://aquarium-shop-frontend.vercel.app${url}`);
+    // Case 2: Path starting with /assets/ - load from frontend
+    else if (url.includes('/assets/')) {
+      // Make sure we have the correct frontend URL
+      const frontendUrl = 'https://aquarium-shop-frontend.vercel.app';
+      const imageUrl = `${frontendUrl}${url.startsWith('/') ? url : '/' + url}`;
+      console.log('🔗 Loading from frontend:', imageUrl);
+      setImageSrc(imageUrl);
     }
-    // Relative path — served by React public folder
-    else if (url.startsWith('/')) {
-      setImageSrc(url);
-    }
-    // Plain filename — map to category folder
+    // Case 3: Plain filename - build path with category
     else if (!url.includes('/')) {
       let folder = 'fish_foods';
       const cat = product.category?.toLowerCase() || '';
+      
       if (cat.includes('medicine')) folder = 'fish_medicine';
       else if (cat.includes('planted')) folder = 'aquarium_lights';
       else if (cat.includes('light')) folder = 'aquarium_lights';
@@ -61,12 +43,19 @@ useEffect(() => {
       else if (cat.includes('accessories')) folder = 'aquarium_accessories';
       else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
       else if (cat.includes('tank')) folder = 'aquarium_tanks';
-      setImageSrc(`/assets/${folder}/${url}`);
+      
+      const imageUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
+      console.log('🔗 Generated URL:', imageUrl);
+      setImageSrc(imageUrl);
     }
+    // Case 4: Any other path
     else {
-      setImageError(true);
+      const imageUrl = `https://aquarium-shop-frontend.vercel.app${url.startsWith('/') ? url : '/' + url}`;
+      console.log('🔗 Other path:', imageUrl);
+      setImageSrc(imageUrl);
     }
   } else {
+    console.log('❌ No image for:', product.name);
     setImageError(true);
   }
 }, [product]);
