@@ -6,6 +6,7 @@ import axios from 'axios';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Helmet } from 'react-helmet-async';
+import config from '../config';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -106,7 +107,7 @@ const categories = [
 
   const fetchFeaturedProducts = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/products/featured`);
+      const response = await axios.get(`${config.API_URL}/api/products/featured`);
       console.log('Featured products:', response.data); // Debug line
       setFeaturedProducts(response.data.products || []);
     } catch (error) {
@@ -120,7 +121,7 @@ const categories = [
   const fetchNewArrivals = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/products?sort=createdAt&limit=8`
+        `${config.API_URL}/api/products?sort=createdAt&limit=8`
       );
       console.log('New arrivals response:', response.data);
       setNewArrivals(response.data.products || []);
@@ -136,7 +137,7 @@ const categories = [
     setCategoryLoading(prev => ({ ...prev, [categoryName]: true }));
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`
+        `${config.API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`
       );
       console.log(`${categoryName} products:`, response.data); // Debug line
       setCategoryProducts(prev => ({

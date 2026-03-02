@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import config from '../config';
 
 const ProductCard = ({ product }) => {
   const [imageError, setImageError] = useState(false);
@@ -26,7 +27,7 @@ useEffect(() => {
     }
     // /uploads/ paths are served by the backend
     else if (url.startsWith('/uploads/') || url.includes('/uploads/')) {
-      const api = process.env.REACT_APP_API_URL || "https://aquarium-shop-otdq.onrender.com";
+      const api = config.API_URL;
       setImageSrc(`${api}${url.startsWith('/') ? url : '/' + url}`);
     }
     // ✅ NEW: /assets/ paths are served by frontend
