@@ -85,7 +85,7 @@ const categories = [
   }
 ];
 
-const HomePage = () => {
+  const HomePage = () => {
   console.log('API URL:', process.env.REACT_APP_API_URL); // Debug line
 
   const [featuredProducts, setFeaturedProducts] = useState([]);
