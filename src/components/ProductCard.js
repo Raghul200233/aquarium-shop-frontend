@@ -9,6 +9,12 @@ const ProductCard = ({ product }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
 
 useEffect(() => {
+    // 🔍 DEBUG: Log everything
+  console.log('🎯 ProductCard mounted for:', product.name);
+  console.log('📦 Full product data:', product);
+  console.log('🖼️ Image URL from API:', product.images?.[0]?.url);
+  console.log('📂 Product category:', product.category);
+  
   // Reset states when product changes
   console.log('🖼️ Product image URL:', product.images?.[0]?.url);
   setImageError(false);
