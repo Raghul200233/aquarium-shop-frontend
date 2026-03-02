@@ -92,12 +92,12 @@ const categories = [
   const HomePage = () => {
   console.log('API URL:', process.env.REACT_APP_API_URL); // Debug line
 
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [categoryProducts, setCategoryProducts] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [categoryLoading, setCategoryLoading] = useState({});
-  const [newArrivals, setNewArrivals] = useState([]);
-  const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
+const [featuredProducts, setFeaturedProducts] = useState([]);
+const [categoryProducts, setCategoryProducts] = useState({});
+const [loading, setLoading] = useState(true);
+const [categoryLoading, setCategoryLoading] = useState({});
+const [newArrivals, setNewArrivals] = useState([]);
+const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
 
 // Add this for debugging
 useEffect(() => {
