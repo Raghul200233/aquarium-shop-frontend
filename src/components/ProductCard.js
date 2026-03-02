@@ -19,18 +19,22 @@ useEffect(() => {
     let url = product.images[0].url;
     console.log('🖼️ Original URL:', url);
 
+    // Build the correct image URL
+    let fullImageUrl;
+
     // Case 1: Base64 image (starts with data:image)
     if (url.startsWith('data:image')) {
       console.log('✅ Base64 image detected');
-      setImageSrc(url); // Use directly - no prefix needed!
+      fullImageUrl = url;
     }
     // Case 2: Already a full HTTP URL
     else if (url.startsWith('http')) {
-      setImageSrc(url);
+      fullImageUrl = url;
     }
     // Case 3: Path starting with /assets/
     else if (url.includes('/assets/')) {
-      setImageSrc(`https://aquarium-shop-frontend.vercel.app${url}`);
+      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+      console.log('✅ Asset URL:', fullImageUrl);
     }
     // Case 4: Plain filename
     else if (!url.includes('/')) {
@@ -47,12 +51,17 @@ useEffect(() => {
       else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
       else if (cat.includes('tank')) folder = 'aquarium_tanks';
       
-      setImageSrc(`https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`);
+      fullImageUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
+      console.log('✅ Generated URL:', fullImageUrl);
     }
     // Case 5: Any other path
     else {
-      setImageSrc(`https://aquarium-shop-frontend.vercel.app${url}`);
+      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+      console.log('✅ Other URL:', fullImageUrl);
     }
+
+    setImageSrc(fullImageUrl);
+    
   } else {
     console.log('❌ No image found for:', product.name);
     setImageError(true);
