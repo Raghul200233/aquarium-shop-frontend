@@ -86,6 +86,8 @@ const categories = [
 ];
 
 const HomePage = () => {
+  console.log('API URL:', process.env.REACT_APP_API_URL); // Debug line
+
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categoryProducts, setCategoryProducts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -105,9 +107,11 @@ const HomePage = () => {
   const fetchFeaturedProducts = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/products/featured`);
-      setFeaturedProducts(response.data.products);
+      console.log('Featured products:', response.data); // Debug line
+      setFeaturedProducts(response.data.products || []);
     } catch (error) {
       console.error('Error fetching featured products:', error);
+      setFeaturedProducts([]);
     } finally {
       setLoading(false);
     }
@@ -116,11 +120,13 @@ const HomePage = () => {
   const fetchNewArrivals = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL.replace(/\/$/, "")}/api/products`
+        `${process.env.REACT_APP_API_URL}/api/products?sort=createdAt&limit=8`
       );
-      setNewArrivals(response.data.products);
+      console.log('New arrivals response:', response.data);
+      setNewArrivals(response.data.products || []);
     } catch (error) {
       console.error('Error fetching new arrivals:', error);
+      setNewArrivals([]);
     } finally {
       setNewArrivalsLoading(false);
     }
@@ -132,12 +138,17 @@ const HomePage = () => {
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/products?category=${encodeURIComponent(categoryName)}&limit=4`
       );
+      console.log(`${categoryName} products:`, response.data); // Debug line
       setCategoryProducts(prev => ({
         ...prev,
-        [categoryName]: response.data.products
+        [categoryName]: response.data.products || []
       }));
     } catch (error) {
       console.error(`Error fetching ${categoryName} products:`, error);
+      setCategoryProducts(prev => ({
+        ...prev,
+        [categoryName]: []
+      }));
     } finally {
       setCategoryLoading(prev => ({ ...prev, [categoryName]: false }));
     }

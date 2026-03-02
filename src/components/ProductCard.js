@@ -15,29 +15,28 @@ useEffect(() => {
   if (product.images && product.images[0] && product.images[0].url) {
     let url = product.images[0].url;
 
-    // data: URL — validate it's complete (truncated data URLs will fail)
+    // data: URL — validate it's complete
     if (url.startsWith('data:image')) {
       if (url.length > 100) {
         setImageSrc(url);
       } else {
-        setImageError(true); // truncated/invalid data URL
+        setImageError(true);
       }
     }
-    // Handle /uploads/ paths (served by backend)
+    // /uploads/ paths are served by the backend
     else if (url.startsWith('/uploads/') || url.includes('/uploads/')) {
-      const api = process.env.REACT_APP_API_URL || "https://your-render-url.onrender.com";
+      const api = process.env.REACT_APP_API_URL || "https://aquarium-shop-otdq.onrender.com";
       setImageSrc(`${api}${url.startsWith('/') ? url : '/' + url}`);
     }
-    // Handle /assets/ paths (served by frontend - THIS IS NEW)
+    // ✅ NEW: /assets/ paths are served by frontend
     else if (url.startsWith('/assets/')) {
-      // These are served directly from your frontend public folder
       setImageSrc(url);
     }
     // Absolute URL (http/https)
     else if (url.startsWith('http')) {
       setImageSrc(url);
     }
-    // Relative /assets/ path — served by React public folder
+    // Relative path — served by React public folder
     else if (url.startsWith('/')) {
       setImageSrc(url);
     }
@@ -57,11 +56,9 @@ useEffect(() => {
       setImageSrc(`/assets/${folder}/${url}`);
     }
     else {
-      // Unknown URL format — trigger fallback emoji
       setImageError(true);
     }
   } else {
-    // No image stored at all — show emoji fallback
     setImageError(true);
   }
 }, [product]);
