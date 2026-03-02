@@ -35,7 +35,7 @@ useEffect(() => {
     }
     // Absolute URL (http/https)
     else if (url.startsWith('http')) {
-      setImageSrc(url);
+      setImageSrc(`https://aquarium-shop-frontend.vercel.app${url}`);
     }
     // Relative path — served by React public folder
     else if (url.startsWith('/')) {
