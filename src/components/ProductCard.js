@@ -19,22 +19,20 @@ useEffect(() => {
     let url = product.images[0].url;
     console.log('🖼️ Original URL:', url);
 
-    // Build the correct image URL
-    let fullImageUrl;
-
-    // Case 1: Base64 image (starts with data:image)
+    // Case 1: Base64 image
     if (url.startsWith('data:image')) {
       console.log('✅ Base64 image detected');
-      fullImageUrl = url;
+      setImageSrc(url);
     }
-    // Case 2: Already a full HTTP URL
+    // Case 2: Already a full URL
     else if (url.startsWith('http')) {
-      fullImageUrl = url;
+      setImageSrc(url);
     }
-    // Case 3: Path starting with /assets/
+    // Case 3: /assets/ path - NEEDS FULL DOMAIN
     else if (url.includes('/assets/')) {
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
-      console.log('✅ Asset URL:', fullImageUrl);
+      const fullUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+      console.log('✅ Asset URL with domain:', fullUrl);
+      setImageSrc(fullUrl);
     }
     // Case 4: Plain filename
     else if (!url.includes('/')) {
@@ -51,17 +49,16 @@ useEffect(() => {
       else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
       else if (cat.includes('tank')) folder = 'aquarium_tanks';
       
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
-      console.log('✅ Generated URL:', fullImageUrl);
+      const fullUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
+      console.log('✅ Generated URL:', fullUrl);
+      setImageSrc(fullUrl);
     }
     // Case 5: Any other path
     else {
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
-      console.log('✅ Other URL:', fullImageUrl);
+      const fullUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+      console.log('✅ Other URL:', fullUrl);
+      setImageSrc(fullUrl);
     }
-
-    setImageSrc(fullImageUrl);
-    
   } else {
     console.log('❌ No image found for:', product.name);
     setImageError(true);
