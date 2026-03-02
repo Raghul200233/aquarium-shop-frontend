@@ -116,7 +116,7 @@ const HomePage = () => {
   const fetchNewArrivals = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/products?sort=createdAt:desc&limit=8`
+        `${process.env.REACT_APP_API_URL.replace(/\/$/, "")}/api/products`
       );
       setNewArrivals(response.data.products);
     } catch (error) {
