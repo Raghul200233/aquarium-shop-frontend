@@ -7,59 +7,62 @@ const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  useEffect(() => {
-    // Reset states when product changes
-    setImageError(false);
-    setImgLoaded(false);
+useEffect(() => {
+  // Reset states when product changes
+  console.log('🖼️ Product image URL:', product.images?.[0]?.url);
+  setImageError(false);
+  setImgLoaded(false);
 
-    if (product.images && product.images[0] && product.images[0].url) {
-      let url = product.images[0].url;
+  if (product.images && product.images[0] && product.images[0].url) {
+    let url = product.images[0].url;
 
-      // data: URL — validate it's complete (truncated data URLs will fail)
-      if (url.startsWith('data:image')) {
-        if (url.length > 100) {
-          setImageSrc(url);
-        } else {
-          setImageError(true); // truncated/invalid data URL
-        }
-      }
-      // /uploads/ paths are served by the backend, not the React dev server
-      else if (url.startsWith('/uploads/') || url.includes('/uploads/')) {
-        const api = process.env.REACT_APP_API_URL || "https://your-render-url.onrender.com";
-        setImageSrc(`${api}${url.startsWith('/') ? url : '/' + url}`);
-      }
-      // Absolute URL (http/https)
-      else if (url.startsWith('http')) {
+    // data: URL — validate it's complete
+    if (url.startsWith('data:image')) {
+      if (url.length > 100) {
         setImageSrc(url);
-      }
-      // Relative /assets/ path — served by React public folder
-      else if (url.startsWith('/')) {
-        setImageSrc(url);
-      }
-      // Plain filename — map to category folder
-      else if (!url.includes('/')) {
-        let folder = 'fish_foods';
-        const cat = product.category?.toLowerCase() || '';
-        if (cat.includes('medicine')) folder = 'fish_medicine';
-        else if (cat.includes('planted')) folder = 'aquarium_lights'; // planted tank lights share the aquarium_lights folder
-        else if (cat.includes('light')) folder = 'aquarium_lights';
-        else if (cat.includes('live fish')) folder = 'live_fishes';
-        else if (cat.includes('filter')) folder = 'filters';
-        else if (cat.includes('heater')) folder = 'heaters';
-        else if (cat.includes('accessories')) folder = 'aquarium_accessories';
-        else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
-        else if (cat.includes('tank')) folder = 'aquarium_tanks'; // tanks after accessories/stones so 'planted tank lights' hits 'planted' first
-        setImageSrc(`/assets/${folder}/${url}`);
-      }
-      else {
-        // Unknown URL format — trigger fallback emoji
+      } else {
         setImageError(true);
       }
-    } else {
-      // No image stored at all — show emoji fallback
+    }
+    // /uploads/ paths are served by the backend
+    else if (url.startsWith('/uploads/') || url.includes('/uploads/')) {
+      const api = process.env.REACT_APP_API_URL || "https://aquarium-shop-otdq.onrender.com";
+      setImageSrc(`${api}${url.startsWith('/') ? url : '/' + url}`);
+    }
+    // ✅ NEW: /assets/ paths are served by frontend
+    else if (url.startsWith('/assets/')) {
+      setImageSrc(url);
+    }
+    // Absolute URL (http/https)
+    else if (url.startsWith('http')) {
+      setImageSrc(url);
+    }
+    // Relative path — served by React public folder
+    else if (url.startsWith('/')) {
+      setImageSrc(url);
+    }
+    // Plain filename — map to category folder
+    else if (!url.includes('/')) {
+      let folder = 'fish_foods';
+      const cat = product.category?.toLowerCase() || '';
+      if (cat.includes('medicine')) folder = 'fish_medicine';
+      else if (cat.includes('planted')) folder = 'aquarium_lights';
+      else if (cat.includes('light')) folder = 'aquarium_lights';
+      else if (cat.includes('live fish')) folder = 'live_fishes';
+      else if (cat.includes('filter')) folder = 'filters';
+      else if (cat.includes('heater')) folder = 'heaters';
+      else if (cat.includes('accessories')) folder = 'aquarium_accessories';
+      else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
+      else if (cat.includes('tank')) folder = 'aquarium_tanks';
+      setImageSrc(`/assets/${folder}/${url}`);
+    }
+    else {
       setImageError(true);
     }
-  }, [product]);
+  } else {
+    setImageError(true);
+  }
+}, [product]);
 
 
   // Handle image load error — show emoji fallback directly (no broken placeholder)
