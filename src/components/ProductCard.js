@@ -1,58 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-const currentDomain = window.location.origin;
+
 const ProductCard = ({ product }) => {
   const [imageError, setImageError] = useState(false);
   const [imageSrc, setImageSrc] = useState('');
   const [isHovered, setIsHovered] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  useEffect(() => {
-    // Reset states
-    setImageError(false);
-    setImgLoaded(false);
+  const currentDomain = window.location.origin;
 
-    console.log('🎯 Rendering product:', product.name);
+useEffect(() => {
+  // Reset states
+  setImageError(false);
+  setImgLoaded(false);
 
-    // Check if product has images
-    if (!product.images || !product.images[0] || !product.images[0].url) {
-      console.log('❌ No image for:', product.name);
-      setImageError(true);
-      return;
-    }
+  console.log('🎯 Rendering product:', product.name);
+  console.log('📍 Current domain:', currentDomain);
 
-    const url = product.images[0].url;
-    console.log('🖼️ Original URL:', url);
+  // Check if product has images
+  if (!product.images || !product.images[0] || !product.images[0].url) {
+    console.log('❌ No image for:', product.name);
+    setImageError(true);
+    return;
+  }
 
-    // Build full URL
-    let fullUrl;
+  const url = product.images[0].url;
+  console.log('🖼️ Original URL:', url);
 
-    // Case 1: Base64 image
-    if (url.startsWith('data:image')) {
-      fullUrl = url;
-      console.log('✅ Using base64 image');
-    }
-    // Case 2: Already full URL
-    else if (url.startsWith('http')) {
-      fullUrl = url;
-      console.log('✅ Using full URL');
-    }
-    // Case 3: /assets/ path - add frontend domain
-    else if (url.includes('/assets/')) {
-      fullUrl =  `currentDomain${url}`;
-      console.log('✅ Added frontend domain:', fullUrl);
-    }
-    // Case 4: Any other path
-    else {
-      fullUrl = `currentDomain${url.startsWith('/') ? url : '/' + url}`;
-      console.log('✅ Added domain to path:', fullUrl);
-    }
+  // Build full URL
+  let fullUrl;
 
-    console.log('🎯 Setting image source to:', fullUrl);
-    setImageSrc(fullUrl);
+  // Case 1: Base64 image
+  if (url.startsWith('data:image')) {
+    fullUrl = url;
+    console.log('✅ Using base64 image');
+  }
+  // Case 2: Already full URL
+  else if (url.startsWith('http')) {
+    fullUrl = url;
+    console.log('✅ Using full URL');
+  }
+  // Case 3: /assets/ path - add current domain
+  else if (url.includes('/assets/')) {
+    fullUrl = `${currentDomain}${url}`;  // ✅ FIXED
+    console.log('✅ Added current domain:', fullUrl);
+  }
+  // Case 4: Any other path
+  else {
+    fullUrl = `${currentDomain}${url.startsWith('/') ? url : '/' + url}`;  // ✅ FIXED
+    console.log('✅ Added domain to path:', fullUrl);
+  }
 
-  }, [product]);
+  console.log('🎯 Setting image source to:', fullUrl);
+  setImageSrc(fullUrl);
+
+}, [product]);
 
   const handleImageError = () => {
     console.log('❌ Image failed to load:', imageSrc);
