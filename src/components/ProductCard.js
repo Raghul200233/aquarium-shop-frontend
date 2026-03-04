@@ -13,29 +13,32 @@ useEffect(() => {
   setImgLoaded(false);
 
   console.log('🎯 Rendering product:', product.name);
-  console.log('📦 Product data:', product);
 
   if (product.images && product.images[0] && product.images[0].url) {
     let url = product.images[0].url;
-    console.log('🖼️ Original URL:', url);
+    console.log('🖼️ Original URL from API:', url);
+
+    // Build the full image URL
+    let fullImageUrl;
 
     // Case 1: Base64 image
     if (url.startsWith('data:image')) {
-      console.log('✅ Base64 image detected');
-      setImageSrc(url);
+      fullImageUrl = url;
+      console.log('✅ Using base64 image');
     }
     // Case 2: Already a full URL
     else if (url.startsWith('http')) {
-      setImageSrc(url);
+      fullImageUrl = url;
+      console.log('✅ Using full URL:', fullImageUrl);
     }
-    // Case 3: /assets/ path - NEEDS FULL DOMAIN
-    else if (url.includes('/assets/')) {
-      const fullUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
-      console.log('✅ Asset URL with domain:', fullUrl);
-      setImageSrc(fullUrl);
+    // Case 3: Path starting with /assets/ - ADD FRONTEND DOMAIN
+    else if (url.startsWith('/assets/')) {
+      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+      console.log('✅ Added frontend domain:', fullImageUrl);
     }
     // Case 4: Plain filename
     else if (!url.includes('/')) {
+      // Determine folder based on category
       let folder = 'fish_foods';
       const cat = product.category?.toLowerCase() || '';
       
@@ -49,16 +52,20 @@ useEffect(() => {
       else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
       else if (cat.includes('tank')) folder = 'aquarium_tanks';
       
-      const fullUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
-      console.log('✅ Generated URL:', fullUrl);
-      setImageSrc(fullUrl);
+      fullImageUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
+      console.log('✅ Generated with folder:', fullImageUrl);
     }
     // Case 5: Any other path
     else {
-      const fullUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
-      console.log('✅ Other URL:', fullUrl);
-      setImageSrc(fullUrl);
+      // Make sure it starts with /assets/ for consistency
+      const path = url.startsWith('/') ? url : `/${url}`;
+      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${path}`;
+      console.log('✅ Added domain to path:', fullImageUrl);
     }
+
+    // Set the image source
+    setImageSrc(fullImageUrl);
+    
   } else {
     console.log('❌ No image found for:', product.name);
     setImageError(true);
