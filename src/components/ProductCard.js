@@ -55,7 +55,7 @@ useEffect(() => {
   console.log('🎯 Setting image source to:', fullUrl);
   setImageSrc(fullUrl);
 
-}, [product]);
+}, [product, currentDomain]);
 
   const handleImageError = () => {
     console.log('❌ Image failed to load:', imageSrc);
