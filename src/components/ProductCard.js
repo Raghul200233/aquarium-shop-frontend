@@ -8,95 +8,61 @@ const ProductCard = ({ product }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
-  // Reset states
-  setImageError(false);
-  setImgLoaded(false);
+    // Reset states
+    setImageError(false);
+    setImgLoaded(false);
 
-  console.log('========== PRODUCT CARD DEBUG ==========');
-  console.log('🎯 Product name:', product.name);
-  console.log('📦 Full product object:', JSON.stringify(product, null, 2));
-  
-  if (product.images) {
-    console.log('🖼️ Images array:', product.images);
-    if (product.images[0]) {
-      console.log('🖼️ First image object:', product.images[0]);
-      if (product.images[0].url) {
-        console.log('🖼️ Image URL:', product.images[0].url);
-      } else {
-        console.log('❌ First image has no URL property');
-      }
-    } else {
-      console.log('❌ Images array is empty');
+    console.log('🎯 Rendering product:', product.name);
+
+    // Check if product has images
+    if (!product.images || !product.images[0] || !product.images[0].url) {
+      console.log('❌ No image for:', product.name);
+      setImageError(true);
+      return;
     }
-  } else {
-    console.log('❌ No images array on product');
-  }
 
-  if (product.images && product.images[0] && product.images[0].url) {
-    let url = product.images[0].url;
-    console.log('✅ Found URL:', url);
+    const url = product.images[0].url;
+    console.log('🖼️ Original URL:', url);
 
-    // Build the full image URL
-    let fullImageUrl;
+    // Build full URL
+    let fullUrl;
 
     // Case 1: Base64 image
     if (url.startsWith('data:image')) {
-      fullImageUrl = url;
+      fullUrl = url;
       console.log('✅ Using base64 image');
     }
-    // Case 2: Already a full URL
+    // Case 2: Already full URL
     else if (url.startsWith('http')) {
-      fullImageUrl = url;
-      console.log('✅ Using full URL:', fullImageUrl);
+      fullUrl = url;
+      console.log('✅ Using full URL');
     }
-    // Case 3: Path starting with /assets/ - ADD FRONTEND DOMAIN
+    // Case 3: /assets/ path - add frontend domain
     else if (url.includes('/assets/')) {
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
-      console.log('✅ Added frontend domain:', fullImageUrl);
+      fullUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+      console.log('✅ Added frontend domain:', fullUrl);
     }
-    // Case 4: Plain filename (no slashes)
-    else if (!url.includes('/')) {
-      // Determine folder based on category
-      let folder = 'fish_foods';
-      const cat = product.category?.toLowerCase() || '';
-      
-      if (cat.includes('medicine')) folder = 'fish_medicine';
-      else if (cat.includes('planted')) folder = 'aquarium_lights';
-      else if (cat.includes('light')) folder = 'aquarium_lights';
-      else if (cat.includes('live fish')) folder = 'live_fishes';
-      else if (cat.includes('filter')) folder = 'filters';
-      else if (cat.includes('heater')) folder = 'heaters';
-      else if (cat.includes('accessories')) folder = 'aquarium_accessories';
-      else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
-      else if (cat.includes('tank')) folder = 'aquarium_tanks';
-      
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
-      console.log('✅ Generated with folder:', fullImageUrl);
-    }
-    // Case 5: Any other path
+    // Case 4: Any other path
     else {
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
-      console.log('✅ Added domain to path:', fullImageUrl);
+      fullUrl = `https://aquarium-shop-frontend.vercel.app${url.startsWith('/') ? url : '/' + url}`;
+      console.log('✅ Added domain to path:', fullUrl);
     }
 
-    console.log('🎯 Setting image source to:', fullImageUrl);
-    setImageSrc(fullImageUrl);
-    
-  } else {
-    console.log('❌ No valid image found for:', product.name);
-    console.log('❌ Setting imageError to true');
-    setImageError(true);
-  }
-  console.log('=======================================');
-}, [product]);
+    console.log('🎯 Setting image source to:', fullUrl);
+    setImageSrc(fullUrl);
 
-  // Handle image load error
+  }, [product]);
+
   const handleImageError = () => {
     console.log('❌ Image failed to load:', imageSrc);
     setImageError(true);
   };
 
-  // Category-based display emoji for the fallback tile
+  const handleImageLoad = () => {
+    console.log('✅ Image loaded successfully:', imageSrc);
+    setImgLoaded(true);
+  };
+
   const getCategoryEmoji = () => {
     const cat = (product.category || '').toLowerCase();
     if (cat.includes('live fish')) return '🐟';
@@ -119,7 +85,7 @@ const ProductCard = ({ product }) => {
       <div className={`product-card ${isHovered ? 'hovered' : ''}`}>
         <div className="product-image-container">
           <div className="image-wrapper">
-            {imageError ? (
+            {imageError || !imageSrc ? (
               <div className="fallback-image">
                 <span className="fallback-icon">{getCategoryEmoji()}</span>
                 <span className="fallback-text">{product.name?.substring(0, 30)}</span>
@@ -133,10 +99,7 @@ const ProductCard = ({ product }) => {
                   alt={product.name}
                   className={`product-image ${isHovered ? 'hovered' : ''} ${imgLoaded ? 'img-fade-in' : 'img-hidden'}`}
                   onError={handleImageError}
-                  onLoad={() => {
-                    console.log('✅ Image loaded successfully:', imageSrc);
-                    setImgLoaded(true);
-                  }}
+                  onLoad={handleImageLoad}
                   loading="lazy"
                 />
               </>
