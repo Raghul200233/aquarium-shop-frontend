@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
+const currentDomain = window.location.origin;
 const ProductCard = ({ product }) => {
   const [imageError, setImageError] = useState(false);
   const [imageSrc, setImageSrc] = useState('');
@@ -39,12 +40,12 @@ const ProductCard = ({ product }) => {
     }
     // Case 3: /assets/ path - add frontend domain
     else if (url.includes('/assets/')) {
-      fullUrl =  `https://eliteaquariumandpetstore.com${url}`;
+      fullUrl =  `currentDomain${url}`;
       console.log('✅ Added frontend domain:', fullUrl);
     }
     // Case 4: Any other path
     else {
-      fullUrl = `https://eliteaquariumandpetstore.com${url.startsWith('/') ? url : '/' + url}`;
+      fullUrl = `currentDomain${url.startsWith('/') ? url : '/' + url}`;
       console.log('✅ Added domain to path:', fullUrl);
     }
 
