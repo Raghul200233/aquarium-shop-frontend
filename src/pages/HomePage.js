@@ -110,7 +110,16 @@ const categories = [
     categories.forEach(category => {
       fetchProductsByCategory(category.name);
     });
+        // Add this debug to check images after render
+  setTimeout(() => {
+    const images = document.querySelectorAll('.product-image');
+    console.log('🔍 Images in homepage:', images.length);
+    images.forEach((img, i) => {
+      console.log(`Image ${i+1}:`, img.src, 'Loaded:', img.complete);
+    });
+  }, 2000);
   }, []);
+
 
   const fetchFeaturedProducts = async () => {
     try {
@@ -295,6 +304,9 @@ const categories = [
                   1024: { slidesPerView: 4 }
                 }}
                 className="products-swiper"
+                watchSlidesProgress={true}
+                observer={true}
+                observeParents={true}
               >
                 {featuredProducts.length > 0 ? (
                   featuredProducts.map((product) => (
@@ -349,6 +361,9 @@ const categories = [
                   1024: { slidesPerView: 4 }
                 }}
                 className="products-swiper"
+                watchSlidesProgress={true}
+                observer={true}
+                observeParents={true}
               >
                 {newArrivals.map((product) => (
                   <SwiperSlide key={product._id}>
@@ -396,6 +411,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Live Fishes']?.length > 0 ? (
                 categoryProducts['Live Fishes'].map((product) => (
@@ -438,6 +456,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Aquarium Tanks']?.length > 0 ? (
                 categoryProducts['Aquarium Tanks'].map((product) => (
@@ -479,6 +500,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Fish Medicines']?.length > 0 ? (
                 categoryProducts['Fish Medicines'].map((product) => (
@@ -520,6 +544,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Filters']?.length > 0 ? (
                 categoryProducts['Filters'].map((product) => (
@@ -561,6 +588,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Heaters']?.length > 0 ? (
                 categoryProducts['Heaters'].map((product) => (
@@ -602,6 +632,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Fish Foods']?.length > 0 ? (
                 categoryProducts['Fish Foods'].map((product) => (
@@ -643,6 +676,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Aquarium Lights']?.length > 0 ? (
                 categoryProducts['Aquarium Lights'].map((product) => (
@@ -684,6 +720,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Planted Tank Lights']?.length > 0 ? (
                 categoryProducts['Planted Tank Lights'].map((product) => (
@@ -725,6 +764,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Aquarium Accessories']?.length > 0 ? (
                 categoryProducts['Aquarium Accessories'].map((product) => (
@@ -766,6 +808,9 @@ const categories = [
                 1024: { slidesPerView: 4 }
               }}
               className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
             >
               {categoryProducts['Aquarium Stones and Sands']?.length > 0 ? (
                 categoryProducts['Aquarium Stones and Sands'].map((product) => (
