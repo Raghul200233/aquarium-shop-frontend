@@ -7,74 +7,73 @@ const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-useEffect(() => {
-  // Reset states
-  setImageError(false);
-  setImgLoaded(false);
+  useEffect(() => {
+    // Reset states
+    setImageError(false);
+    setImgLoaded(false);
 
-  console.log('🎯 Rendering product:', product.name);
+    console.log('🎯 Rendering product:', product.name);
+    console.log('📦 Full product:', product);
 
-  if (product.images && product.images[0] && product.images[0].url) {
-    let url = product.images[0].url;
-    console.log('🖼️ Original URL from API:', url);
+    if (product.images && product.images[0] && product.images[0].url) {
+      let url = product.images[0].url;
+      console.log('🖼️ Original URL from API:', url);
 
-    // Build the full image URL
-    let fullImageUrl;
+      // Build the full image URL
+      let fullImageUrl;
 
-    // Case 1: Base64 image
-    if (url.startsWith('data:image')) {
-      fullImageUrl = url;
-      console.log('✅ Using base64 image');
-    }
-    // Case 2: Already a full URL
-    else if (url.startsWith('http')) {
-      fullImageUrl = url;
-      console.log('✅ Using full URL:', fullImageUrl);
-    }
-    // Case 3: Path starting with /assets/ - ADD FRONTEND DOMAIN
-    else if (url.startsWith('/assets/')) {
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
-      console.log('✅ Added frontend domain:', fullImageUrl);
-    }
-    // Case 4: Plain filename
-    else if (!url.includes('/')) {
-      // Determine folder based on category
-      let folder = 'fish_foods';
-      const cat = product.category?.toLowerCase() || '';
+      // Case 1: Base64 image
+      if (url.startsWith('data:image')) {
+        fullImageUrl = url;
+        console.log('✅ Using base64 image');
+      }
+      // Case 2: Already a full URL
+      else if (url.startsWith('http')) {
+        fullImageUrl = url;
+        console.log('✅ Using full URL:', fullImageUrl);
+      }
+      // Case 3: Path starting with /assets/ - ADD FRONTEND DOMAIN
+      else if (url.includes('/assets/')) {
+        fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+        console.log('✅ Added frontend domain:', fullImageUrl);
+      }
+      // Case 4: Plain filename (no slashes)
+      else if (!url.includes('/')) {
+        // Determine folder based on category
+        let folder = 'fish_foods';
+        const cat = product.category?.toLowerCase() || '';
+        
+        if (cat.includes('medicine')) folder = 'fish_medicine';
+        else if (cat.includes('planted')) folder = 'aquarium_lights';
+        else if (cat.includes('light')) folder = 'aquarium_lights';
+        else if (cat.includes('live fish')) folder = 'live_fishes';
+        else if (cat.includes('filter')) folder = 'filters';
+        else if (cat.includes('heater')) folder = 'heaters';
+        else if (cat.includes('accessories')) folder = 'aquarium_accessories';
+        else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
+        else if (cat.includes('tank')) folder = 'aquarium_tanks';
+        
+        fullImageUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
+        console.log('✅ Generated with folder:', fullImageUrl);
+      }
+      // Case 5: Any other path
+      else {
+        fullImageUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+        console.log('✅ Added domain to path:', fullImageUrl);
+      }
+
+      // Set the image source
+      setImageSrc(fullImageUrl);
       
-      if (cat.includes('medicine')) folder = 'fish_medicine';
-      else if (cat.includes('planted')) folder = 'aquarium_lights';
-      else if (cat.includes('light')) folder = 'aquarium_lights';
-      else if (cat.includes('live fish')) folder = 'live_fishes';
-      else if (cat.includes('filter')) folder = 'filters';
-      else if (cat.includes('heater')) folder = 'heaters';
-      else if (cat.includes('accessories')) folder = 'aquarium_accessories';
-      else if (cat.includes('stone') || cat.includes('sand')) folder = 'aquarium_accessories';
-      else if (cat.includes('tank')) folder = 'aquarium_tanks';
-      
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app/assets/${folder}/${url}`;
-      console.log('✅ Generated with folder:', fullImageUrl);
+    } else {
+      console.log('❌ No image found for:', product.name);
+      setImageError(true);
     }
-    // Case 5: Any other path
-    else {
-      // Make sure it starts with /assets/ for consistency
-      const path = url.startsWith('/') ? url : `/${url}`;
-      fullImageUrl = `https://aquarium-shop-frontend.vercel.app${path}`;
-      console.log('✅ Added domain to path:', fullImageUrl);
-    }
+  }, [product]);
 
-    // Set the image source
-    setImageSrc(fullImageUrl);
-    
-  } else {
-    console.log('❌ No image found for:', product.name);
-    setImageError(true);
-  }
-}, [product]);
-
-
-  // Handle image load error — show emoji fallback directly (no broken placeholder)
+  // Handle image load error
   const handleImageError = () => {
+    console.log('❌ Image failed to load:', imageSrc);
     setImageError(true);
   };
 
@@ -109,26 +108,26 @@ useEffect(() => {
               </div>
             ) : (
               <>
-                {/* Shimmer skeleton shown until image loads */}
                 {!imgLoaded && <div className="img-skeleton" />}
                 <img
                   src={imageSrc}
                   alt={product.name}
                   className={`product-image ${isHovered ? 'hovered' : ''} ${imgLoaded ? 'img-fade-in' : 'img-hidden'}`}
                   onError={handleImageError}
-                  onLoad={() => setImgLoaded(true)}
+                  onLoad={() => {
+                    console.log('✅ Image loaded successfully:', imageSrc);
+                    setImgLoaded(true);
+                  }}
                   loading="lazy"
                 />
               </>
             )}
 
-            {/* Image overlay with zoom icon */}
             <div className={`image-overlay ${isHovered ? 'visible' : ''}`}>
               <span className="zoom-icon">🔍</span>
             </div>
           </div>
 
-          {/* Stock badge */}
           {product.stock <= 5 && product.stock > 0 && (
             <div className="stock-badge low-stock">Low Stock</div>
           )}
@@ -217,6 +216,36 @@ useEffect(() => {
           transform: scale(1.1);
         }
 
+        .img-hidden {
+          opacity: 0;
+        }
+
+        .img-fade-in {
+          opacity: 1;
+          animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .img-skeleton {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+
         .fallback-image {
           width: 100%;
           height: 100%;
@@ -274,23 +303,12 @@ useEffect(() => {
           font-size: 32px;
           transform: scale(0.8);
           transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-          animation: pulse 2s infinite;
         }
 
         .image-overlay.visible .zoom-icon {
           transform: scale(1);
         }
 
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.7;
-          }
-        }
-
-        /* Badges */
         .stock-badge {
           position: absolute;
           top: 12px;
@@ -300,18 +318,6 @@ useEffect(() => {
           font-size: 12px;
           font-weight: 600;
           z-index: 2;
-          animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-          from {
-            transform: translateX(30px);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
         }
 
         .low-stock {
@@ -337,7 +343,6 @@ useEffect(() => {
           font-size: 12px;
           font-weight: 600;
           z-index: 2;
-          animation: slideIn 0.3s ease-out 0.1s both;
           box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
         }
 
@@ -415,7 +420,6 @@ useEffect(() => {
 
         .product-card.hovered .product-rating {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          transform: scale(1.05);
         }
 
         .rating-star {
@@ -461,58 +465,8 @@ useEffect(() => {
         }
 
         @keyframes blink {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-
-        .out-of-stock {
-          color: #dc3545;
-        }
-
-        /* Quick view button */
-        .quick-view-btn {
-          position: absolute;
-          bottom: 16px;
-          right: 16px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 8px 16px;
-          border-radius: 25px;
-          font-size: 13px;
-          font-weight: 600;
-          opacity: 0;
-          transform: translateY(10px);
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-          cursor: pointer;
-          z-index: 3;
-          pointer-events: none;
-        }
-
-        .quick-view-btn.visible {
-          opacity: 1;
-          transform: translateY(0);
-          pointer-events: auto;
-        }
-
-        .quick-view-btn:hover {
-          transform: translateY(-2px) scale(1.05);
-          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-          .product-card.hovered {
-            transform: translateY(-4px);
-          }
-          
-          .quick-view-btn {
-            display: none;
-          }
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
       `}</style>
     </Link>
