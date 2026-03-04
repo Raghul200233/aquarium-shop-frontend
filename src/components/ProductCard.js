@@ -39,12 +39,12 @@ const ProductCard = ({ product }) => {
     }
     // Case 3: /assets/ path - add frontend domain
     else if (url.includes('/assets/')) {
-      fullUrl = `https://aquarium-shop-frontend.vercel.app${url}`;
+      fullUrl =  `https://eliteaquariumandpetstore.com${url}`;
       console.log('✅ Added frontend domain:', fullUrl);
     }
     // Case 4: Any other path
     else {
-      fullUrl = `https://aquarium-shop-frontend.vercel.app${url.startsWith('/') ? url : '/' + url}`;
+      fullUrl = `https://eliteaquariumandpetstore.com${url.startsWith('/') ? url : '/' + url}`;
       console.log('✅ Added domain to path:', fullUrl);
     }
 
