@@ -7,63 +7,34 @@ const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-useEffect(() => {
-  // Reset states
-  setImageError(false);
-  setImgLoaded(false);
+  useEffect(() => {
+    // Reset states
+    setImageError(false);
+    setImgLoaded(false);
 
-  console.log('🎯 Rendering product:', product.name);
+    console.log('🎯 Product:', product.name);
 
-  // Check if product has images
-  if (!product.images || !product.images[0] || !product.images[0].url) {
-    console.log('❌ No image for:', product.name);
-    setImageError(true);
-    return;
-  }
-
-  const url = product.images[0].url;
-  console.log('🖼️ Original URL:', url);
-
-  // Build URL - USE RELATIVE PATHS ONLY
-  let fullUrl;
-
-  // Case 1: Base64 image
-  if (url.startsWith('data:image')) {
-    fullUrl = url;
-  }
-  // Case 2: Already full URL (but might be from wrong domain)
-  else if (url.startsWith('http')) {
-    // Extract just the path part if it's from your domain
-    if (url.includes('eliteaquariumandpetstore.com')) {
-      const path = url.split('/').slice(3).join('/');
-      fullUrl = '/' + path;
-      console.log('✅ Converted to relative:', fullUrl);
+    // Get image URL - SIMPLE
+    let imageUrl = null;
+    if (product.images && product.images[0] && product.images[0].url) {
+      imageUrl = product.images[0].url;
+      console.log('📸 Image URL:', imageUrl);
+      
+      // Use the URL directly - it's already correct!
+      setImageSrc(imageUrl);
     } else {
-      fullUrl = url; // Keep external URLs as-is
+      console.log('❌ No image');
+      setImageError(true);
     }
-  }
-  // Case 3: /assets/ path - use as is (relative)
-  else if (url.includes('/assets/')) {
-    fullUrl = url; // Just use the relative path
-    console.log('✅ Using relative path:', fullUrl);
-  }
-  // Case 4: Any other path
-  else {
-    fullUrl = url.startsWith('/') ? url : '/' + url;
-    console.log('✅ Using relative path:', fullUrl);
-  }
-
-  setImageSrc(fullUrl);
-
-}, [product]); // Only product as dependency
+  }, [product]);
 
   const handleImageError = () => {
-    console.log('❌ Image failed to load:', imageSrc);
+    console.log('❌ Failed to load:', imageSrc);
     setImageError(true);
   };
 
   const handleImageLoad = () => {
-    console.log('✅ Image loaded successfully:', imageSrc);
+    console.log('✅ Loaded:', imageSrc);
     setImgLoaded(true);
   };
 
