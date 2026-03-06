@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "eliteaquariumandpetstore.com"
+        }
+      ],
+      "destination": "https://www.eliteaquariumandpetstore.com/:1",
+      "permanent": true
+    }
+  ]
+}

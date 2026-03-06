@@ -24,22 +24,27 @@ useEffect(() => {
   const url = product.images[0].url;
   console.log('🖼️ Original URL:', url);
 
-  // Build full URL - USE RELATIVE PATHS
+  // Build URL - USE RELATIVE PATHS ONLY
   let fullUrl;
 
   // Case 1: Base64 image
   if (url.startsWith('data:image')) {
     fullUrl = url;
-    console.log('✅ Using base64 image');
   }
-  // Case 2: Already full URL
+  // Case 2: Already full URL (but might be from wrong domain)
   else if (url.startsWith('http')) {
-    fullUrl = url;
-    console.log('✅ Using full URL');
+    // Extract just the path part if it's from your domain
+    if (url.includes('eliteaquariumandpetstore.com')) {
+      const path = url.split('/').slice(3).join('/');
+      fullUrl = '/' + path;
+      console.log('✅ Converted to relative:', fullUrl);
+    } else {
+      fullUrl = url; // Keep external URLs as-is
+    }
   }
   // Case 3: /assets/ path - use as is (relative)
   else if (url.includes('/assets/')) {
-    fullUrl = url;  // Just use the relative path
+    fullUrl = url; // Just use the relative path
     console.log('✅ Using relative path:', fullUrl);
   }
   // Case 4: Any other path
@@ -48,7 +53,6 @@ useEffect(() => {
     console.log('✅ Using relative path:', fullUrl);
   }
 
-  console.log('🎯 Setting image source to:', fullUrl);
   setImageSrc(fullUrl);
 
 }, [product]); // Only product as dependency
