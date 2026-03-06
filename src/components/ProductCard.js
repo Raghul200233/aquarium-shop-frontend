@@ -3,12 +3,28 @@ import { Link } from 'react-router-dom';
 
 const ProductCard = ({ product }) => {
   // Get image URL - super simple
-  const getImageUrl = () => {
-    if (product.images && product.images[0] && product.images[0].url) {
-      return product.images[0].url;
-    }
+const getImageUrl = () => {
+  if (!product.images || !product.images[0] || !product.images[0].url) {
     return null;
-  };
+  }
+
+  let imagePath = product.images[0].url;
+
+  // If it's already a full HTTP URL, use it as is.
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+
+  // For all other cases (like '/assets/...' or 'filename.jpg'),
+  // construct the absolute URL using the CORRECT frontend domain.
+  // Use the Vercel preview domain for now, as we know it works there.
+  const baseUrl = 'https://aquarium-shop-frontend-raghul200233s-projects.vercel.app';
+  
+  // Ensure the path starts with a '/'
+  const finalPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  
+  return `${baseUrl}${finalPath}`;
+};
 
   const imageUrl = getImageUrl();
 
