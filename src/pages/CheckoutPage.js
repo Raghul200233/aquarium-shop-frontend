@@ -130,42 +130,47 @@ const CheckoutPage = () => {
 
     try {
       // 1. Create order on backend
-      const orderResponse = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/orders/create-order`,
-        {
-          amount: total,
-          currency: 'INR',
-          receipt: `receipt_${Date.now()}`
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+const handleRazorpayPayment = async () => {
+  setLoading(true);
+
+  try {
+    // First create Razorpay order
+    const orderResponse = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/orders/create-order`,
+      {
+        amount: total,
+        currency: 'INR',
+        receipt: `receipt_${Date.now()}`
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
         }
-      );
+      }
+    );
 
-      const { orderId } = orderResponse.data;
+    const { orderId } = orderResponse.data;
 
-      // 2. Prepare order data for verification
-      const orderData = {
-        items: cartItems.map(item => ({
-          product: item.product,
-          quantity: item.quantity,
-          price: item.price
-        })),
-        shippingAddress: {
-          street: formData.shippingAddress.street,
-          city: formData.shippingAddress.city,
-          state: formData.shippingAddress.state,
-          pincode: formData.shippingAddress.pincode,
-          country: formData.shippingAddress.country,
-          phone: formData.phone
-        },
-        paymentMethod: 'RAZORPAY',
-        notes: formData.notes,
-        subtotal,
-        totalAmount: total
-      };
+    // Prepare order data for after payment
+    const orderData = {
+      items: cartItems.map(item => ({
+        product: item.product,
+        quantity: item.quantity,
+        price: item.price  // ✅ ADD THIS
+      })),
+      shippingAddress: {
+        street: formData.shippingAddress.street,
+        city: formData.shippingAddress.city,
+        state: formData.shippingAddress.state,
+        pincode: formData.shippingAddress.pincode,
+        country: formData.shippingAddress.country,
+        phone: formData.phone
+      },
+      paymentMethod: 'RAZORPAY',
+      notes: formData.notes,
+      subtotal: subtotal,
+      totalAmount: total
+    };
 
       // 3. Configure Razorpay options
       const options = {
@@ -257,52 +262,57 @@ const CheckoutPage = () => {
   };
 
   // COD payment handler
-  const handleCODPayment = async () => {
-    setLoading(true);
+const handleCODPayment = async () => {
+  setLoading(true);
 
-    try {
-      const orderData = {
-        items: cartItems.map(item => ({
-          product: item.product,
-          quantity: item.quantity,
-          price: item.price
-        })),
-        shippingAddress: {
-          street: formData.shippingAddress.street,
-          city: formData.shippingAddress.city,
-          state: formData.shippingAddress.state,
-          pincode: formData.shippingAddress.pincode,
-          country: formData.shippingAddress.country,
-          phone: formData.phone
-        },
-        paymentMethod: 'COD',
-        notes: formData.notes,
-        subtotal,
-        totalAmount: total
-      };
+  try {
+    // Calculate shipping
+    const shipping = subtotal > 999 ? 0 : 99;
+    
+    const orderData = {
+      items: cartItems.map(item => ({
+        product: item.product,  // Product ID
+        quantity: item.quantity,
+        price: item.price  // ✅ ADD THIS - it's required!
+      })),
+      shippingAddress: {
+        street: formData.shippingAddress.street,
+        city: formData.shippingAddress.city,
+        state: formData.shippingAddress.state,
+        pincode: formData.shippingAddress.pincode,
+        country: formData.shippingAddress.country,
+        phone: formData.phone
+      },
+      paymentMethod: 'COD',
+      notes: formData.notes,
+      subtotal: subtotal,
+      totalAmount: total
+    };
 
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/orders`,
-        orderData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+    console.log('Sending order data:', orderData); // Debug log
+
+    const response = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/orders`,
+      orderData,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
         }
-      );
-
-      if (response.data.success) {
-        toast.success('Order placed successfully!');
-        clearCart();
-        navigate(`/order-confirmation/${response.data.order._id}`);
       }
-    } catch (error) {
-      console.error('Error placing order:', error);
-      toast.error(error.response?.data?.message || 'Failed to place order');
-    } finally {
-      setLoading(false);
+    );
+
+    if (response.data.success) {
+      toast.success('Order placed successfully!');
+      clearCart();
+      navigate(`/order-confirmation/${response.data.order._id}`);
     }
-  };
+  } catch (error) {
+    console.error('Error placing order:', error);
+    toast.error(error.response?.data?.message || 'Failed to place order');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handlePlaceOrder = () => {
     if (!validateStep1()) {
