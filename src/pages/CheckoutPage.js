@@ -281,30 +281,8 @@ const handleCODPayment = async () => {
       totalAmount: Number(total)
     };
 
-    // 🔍 ENHANCED DEBUG LOGGING
-    console.log('========== ORDER DATA DEBUG ==========');
-    console.log('1. Full orderData object:', JSON.stringify(orderData, null, 2));
-    console.log('2. Items array:', orderData.items);
-    console.log('3. First item structure:', {
-      product: orderData.items[0]?.product,
-      productType: typeof orderData.items[0]?.product,
-      quantity: orderData.items[0]?.quantity,
-      quantityType: typeof orderData.items[0]?.quantity,
-      price: orderData.items[0]?.price,
-      priceType: typeof orderData.items[0]?.price
-    });
-    console.log('4. Shipping address:', orderData.shippingAddress);
-    console.log('5. Payment method:', orderData.paymentMethod);
-    console.log('6. Totals:', { subtotal: orderData.subtotal, total: orderData.totalAmount });
-    console.log('======================================');
-
-    // Validation check before sending
-    if (!orderData.items[0]?.product) {
-      console.error('❌ Product ID is missing!');
-      toast.error('Product information is incomplete');
-      setLoading(false);
-      return;
-    }
+    // Log the data being sent
+    console.log('📤 Sending order data:', JSON.stringify(orderData, null, 2));
 
     const response = await axios.post(
       `${process.env.REACT_APP_API_URL}/api/orders`,
@@ -323,12 +301,27 @@ const handleCODPayment = async () => {
     }
   } catch (error) {
     console.error('❌ Error placing order:', error);
-    // Log the error response from backend if available
+    
+    // 🔥 THIS WILL SHOW THE EXACT ERROR FROM BACKEND
     if (error.response) {
-      console.error('Server response:', error.response.data);
-      toast.error(error.response.data.message || 'Failed to place order');
+      console.log('📋 Error Status:', error.response.status);
+      console.log('📋 Error Headers:', error.response.headers);
+      console.log('📋 Error Data:', error.response.data);
+      
+      // Show error in toast
+      const errorMessage = error.response.data.message || 
+                          error.response.data.error || 
+                          'Failed to place order';
+      toast.error(errorMessage);
+      
+      // Alert with full error for debugging
+      alert('Check console for full error details');
+    } else if (error.request) {
+      console.log('📋 No response received:', error.request);
+      toast.error('No response from server');
     } else {
-      toast.error('Failed to place order');
+      console.log('📋 Error:', error.message);
+      toast.error('Error: ' + error.message);
     }
   } finally {
     setLoading(false);
