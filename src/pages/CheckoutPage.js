@@ -1135,5 +1135,4 @@ const handleCODPayment = async () => {
     </>
   );
 };
-
 export default CheckoutPage;
