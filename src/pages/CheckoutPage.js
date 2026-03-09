@@ -153,24 +153,24 @@ const handleRazorpayPayment = async () => {
 
     // Prepare order data for after payment
     const orderData = {
-      items: cartItems.map(item => ({
-        product: item.product,
-        quantity: item.quantity,
-        price: item.price  // ✅ ADD THIS
-      })),
-      shippingAddress: {
-        street: formData.shippingAddress.street,
-        city: formData.shippingAddress.city,
-        state: formData.shippingAddress.state,
-        pincode: formData.shippingAddress.pincode,
-        country: formData.shippingAddress.country,
-        phone: formData.phone
-      },
-      paymentMethod: 'RAZORPAY',
-      notes: formData.notes,
-      subtotal: subtotal,
-      totalAmount: total
-    };
+  items: cartItems.map(item => ({
+    product: item.product,                 // This should be the product ID string
+    quantity: Number(item.quantity),       // Force to number
+    price: Number(item.price)              // Force to number
+  })),
+  shippingAddress: {
+    street: String(formData.shippingAddress.street || ''),
+    city: String(formData.shippingAddress.city || ''),
+    state: String(formData.shippingAddress.state || ''),
+    pincode: String(formData.shippingAddress.pincode || ''),
+    country: String(formData.shippingAddress.country || 'India'),
+    phone: String(formData.phone || '')
+  },
+  paymentMethod: String(formData.paymentMethod), // 'COD' or 'RAZORPAY'
+  notes: String(formData.notes || ''),
+  subtotal: Number(subtotal),              // Force to number
+  totalAmount: Number(total)                // Force to number
+};
 
       // 3. Configure Razorpay options
       const options = {
@@ -289,7 +289,18 @@ const handleCODPayment = async () => {
       totalAmount: total
     };
 
-    console.log('Sending order data:', orderData); // Debug log
+        console.log('=== ORDER DATA DEBUG ===');
+    console.log('Full orderData:', JSON.stringify(orderData, null, 2));
+    console.log('First item:', orderData.items[0]);
+    console.log('Price type:', typeof orderData.items[0]?.price);
+    console.log('Price value:', orderData.items[0]?.price);
+    
+    if (!orderData.items[0]?.price) {
+      console.error('❌ Price is missing or undefined!');
+      toast.error('Item price is missing');
+      setLoading(false);
+      return;
+    }
 
     const response = await axios.post(
       `${process.env.REACT_APP_API_URL}/api/orders`,
