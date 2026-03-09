@@ -22,7 +22,7 @@ const CheckoutPage = () => {
       country: 'India'
     },
     phone: user?.phone || '',
-    paymentMethod: 'RAZORPAY', // Changed default to Razorpay
+    paymentMethod: 'RAZORPAY',
     notes: ''
   });
 
@@ -129,61 +129,56 @@ const CheckoutPage = () => {
     setLoading(true);
 
     try {
-      // 1. Create order on backend
-const handleRazorpayPayment = async () => {
-  setLoading(true);
-
-  try {
-    // First create Razorpay order
-    const orderResponse = await axios.post(
-      `${process.env.REACT_APP_API_URL}/api/orders/create-order`,
-      {
-        amount: total,
-        currency: 'INR',
-        receipt: `receipt_${Date.now()}`
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+      // First create Razorpay order
+      const orderResponse = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/orders/create-order`,
+        {
+          amount: total,
+          currency: 'INR',
+          receipt: `receipt_${Date.now()}`
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
         }
-      }
-    );
+      );
 
-    const { orderId } = orderResponse.data;
+      const { orderId } = orderResponse.data;
 
-    // Prepare order data for after payment
-    const orderData = {
-  items: cartItems.map(item => ({
-    product: item.product,                 // This should be the product ID string
-    quantity: Number(item.quantity),       // Force to number
-    price: Number(item.price)              // Force to number
-  })),
-  shippingAddress: {
-    street: String(formData.shippingAddress.street || ''),
-    city: String(formData.shippingAddress.city || ''),
-    state: String(formData.shippingAddress.state || ''),
-    pincode: String(formData.shippingAddress.pincode || ''),
-    country: String(formData.shippingAddress.country || 'India'),
-    phone: String(formData.phone || '')
-  },
-  paymentMethod: String(formData.paymentMethod), // 'COD' or 'RAZORPAY'
-  notes: String(formData.notes || ''),
-  subtotal: Number(subtotal),              // Force to number
-  totalAmount: Number(total)                // Force to number
-};
+      // Prepare order data for after payment
+      const orderData = {
+        items: cartItems.map(item => ({
+          product: item.product,
+          quantity: Number(item.quantity),
+          price: Number(item.price)
+        })),
+        shippingAddress: {
+          street: String(formData.shippingAddress.street || ''),
+          city: String(formData.shippingAddress.city || ''),
+          state: String(formData.shippingAddress.state || ''),
+          pincode: String(formData.shippingAddress.pincode || ''),
+          country: String(formData.shippingAddress.country || 'India'),
+          phone: String(formData.phone || '')
+        },
+        paymentMethod: String(formData.paymentMethod),
+        notes: String(formData.notes || ''),
+        subtotal: Number(subtotal),
+        totalAmount: Number(total)
+      };
 
-      // 3. Configure Razorpay options
+      // Configure Razorpay options
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
         amount: total * 100,
         currency: 'INR',
         name: 'Elite Aquarium',
         description: `Payment for ${cartItems.length} items`,
-        image: 'https://eliteaquariumandpetstore.com/logo.png', // Add your logo
+        image: 'https://eliteaquariumandpetstore.com/logo.png',
         order_id: orderId,
         handler: async (response) => {
           try {
-            // 4. Verify payment on backend
+            // Verify payment on backend
             const verifyResponse = await axios.post(
               `${process.env.REACT_APP_API_URL}/api/orders/verify-payment`,
               {
@@ -201,7 +196,7 @@ const handleRazorpayPayment = async () => {
             );
 
             if (verifyResponse.data.success) {
-              // 5. Create final order in database
+              // Create final order in database
               const orderResponse = await axios.post(
                 `${process.env.REACT_APP_API_URL}/api/orders`,
                 orderData,
@@ -243,7 +238,7 @@ const handleRazorpayPayment = async () => {
         }
       };
 
-      // 6. Open Razorpay checkout
+      // Open Razorpay checkout
       const razorpay = new window.Razorpay(options);
       razorpay.open();
 
@@ -262,68 +257,58 @@ const handleRazorpayPayment = async () => {
   };
 
   // COD payment handler
-const handleCODPayment = async () => {
-  setLoading(true);
+  const handleCODPayment = async () => {
+    setLoading(true);
 
-  try {
-    // Calculate shipping
-    const shipping = subtotal > 999 ? 0 : 99;
-    
-    const orderData = {
-      items: cartItems.map(item => ({
-        product: item.product,  // Product ID
-        quantity: item.quantity,
-        price: item.price  // ✅ ADD THIS - it's required!
-      })),
-      shippingAddress: {
-        street: formData.shippingAddress.street,
-        city: formData.shippingAddress.city,
-        state: formData.shippingAddress.state,
-        pincode: formData.shippingAddress.pincode,
-        country: formData.shippingAddress.country,
-        phone: formData.phone
-      },
-      paymentMethod: 'COD',
-      notes: formData.notes,
-      subtotal: subtotal,
-      totalAmount: total
-    };
+    try {
+      const orderData = {
+        items: cartItems.map(item => ({
+          product: item.product,
+          quantity: Number(item.quantity),
+          price: Number(item.price)
+        })),
+        shippingAddress: {
+          street: String(formData.shippingAddress.street || ''),
+          city: String(formData.shippingAddress.city || ''),
+          state: String(formData.shippingAddress.state || ''),
+          pincode: String(formData.shippingAddress.pincode || ''),
+          country: String(formData.shippingAddress.country || 'India'),
+          phone: String(formData.phone || '')
+        },
+        paymentMethod: 'COD',
+        notes: String(formData.notes || ''),
+        subtotal: Number(subtotal),
+        totalAmount: Number(total)
+      };
 
-        console.log('=== ORDER DATA DEBUG ===');
-    console.log('Full orderData:', JSON.stringify(orderData, null, 2));
-    console.log('First item:', orderData.items[0]);
-    console.log('Price type:', typeof orderData.items[0]?.price);
-    console.log('Price value:', orderData.items[0]?.price);
-    
-    if (!orderData.items[0]?.price) {
-      console.error('❌ Price is missing or undefined!');
-      toast.error('Item price is missing');
-      setLoading(false);
-      return;
-    }
+      console.log('=== ORDER DATA DEBUG ===');
+      console.log('Full orderData:', JSON.stringify(orderData, null, 2));
+      console.log('First item:', orderData.items[0]);
+      console.log('Price type:', typeof orderData.items[0]?.price);
+      console.log('Price value:', orderData.items[0]?.price);
 
-    const response = await axios.post(
-      `${process.env.REACT_APP_API_URL}/api/orders`,
-      orderData,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/orders`,
+        orderData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
         }
-      }
-    );
+      );
 
-    if (response.data.success) {
-      toast.success('Order placed successfully!');
-      clearCart();
-      navigate(`/order-confirmation/${response.data.order._id}`);
+      if (response.data.success) {
+        toast.success('Order placed successfully!');
+        clearCart();
+        navigate(`/order-confirmation/${response.data.order._id}`);
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast.error(error.response?.data?.message || 'Failed to place order');
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Error placing order:', error);
-    toast.error(error.response?.data?.message || 'Failed to place order');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handlePlaceOrder = () => {
     if (!validateStep1()) {
@@ -592,7 +577,7 @@ const handleCODPayment = async () => {
             )}
           </div>
 
-          {/* Order Summary Sidebar (same as before) */}
+          {/* Order Summary Sidebar */}
           <div className="checkout-sidebar">
             <div className="order-summary">
               <h3>Order Summary</h3>
@@ -639,7 +624,6 @@ const handleCODPayment = async () => {
       </div>
 
       <style>{`
-        /* Add these new styles */
         .payment-method-section {
           margin: 30px 0;
         }
@@ -698,7 +682,6 @@ const handleCODPayment = async () => {
           color: #666;
         }
 
-        /* Rest of your existing styles */
         .checkout-page {
           max-width: 1400px;
           margin: 0 auto;
@@ -1146,4 +1129,5 @@ const handleCODPayment = async () => {
     </>
   );
 };
+
 export default CheckoutPage;
