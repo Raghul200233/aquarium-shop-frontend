@@ -257,58 +257,83 @@ const CheckoutPage = () => {
   };
 
   // COD payment handler
-  const handleCODPayment = async () => {
-    setLoading(true);
+const handleCODPayment = async () => {
+  setLoading(true);
 
-    try {
-      const orderData = {
-        items: cartItems.map(item => ({
-          product: item.product,
-          quantity: Number(item.quantity),
-          price: Number(item.price)
-        })),
-        shippingAddress: {
-          street: String(formData.shippingAddress.street || ''),
-          city: String(formData.shippingAddress.city || ''),
-          state: String(formData.shippingAddress.state || ''),
-          pincode: String(formData.shippingAddress.pincode || ''),
-          country: String(formData.shippingAddress.country || 'India'),
-          phone: String(formData.phone || '')
-        },
-        paymentMethod: 'COD',
-        notes: String(formData.notes || ''),
-        subtotal: Number(subtotal),
-        totalAmount: Number(total)
-      };
+  try {
+    const orderData = {
+      items: cartItems.map(item => ({
+        product: item.product,
+        quantity: Number(item.quantity),
+        price: Number(item.price)
+      })),
+      shippingAddress: {
+        street: String(formData.shippingAddress.street || ''),
+        city: String(formData.shippingAddress.city || ''),
+        state: String(formData.shippingAddress.state || ''),
+        pincode: String(formData.shippingAddress.pincode || ''),
+        country: String(formData.shippingAddress.country || 'India'),
+        phone: String(formData.phone || '')
+      },
+      paymentMethod: 'COD',
+      notes: String(formData.notes || ''),
+      subtotal: Number(subtotal),
+      totalAmount: Number(total)
+    };
 
-      console.log('=== ORDER DATA DEBUG ===');
-      console.log('Full orderData:', JSON.stringify(orderData, null, 2));
-      console.log('First item:', orderData.items[0]);
-      console.log('Price type:', typeof orderData.items[0]?.price);
-      console.log('Price value:', orderData.items[0]?.price);
+    // 🔍 ENHANCED DEBUG LOGGING
+    console.log('========== ORDER DATA DEBUG ==========');
+    console.log('1. Full orderData object:', JSON.stringify(orderData, null, 2));
+    console.log('2. Items array:', orderData.items);
+    console.log('3. First item structure:', {
+      product: orderData.items[0]?.product,
+      productType: typeof orderData.items[0]?.product,
+      quantity: orderData.items[0]?.quantity,
+      quantityType: typeof orderData.items[0]?.quantity,
+      price: orderData.items[0]?.price,
+      priceType: typeof orderData.items[0]?.price
+    });
+    console.log('4. Shipping address:', orderData.shippingAddress);
+    console.log('5. Payment method:', orderData.paymentMethod);
+    console.log('6. Totals:', { subtotal: orderData.subtotal, total: orderData.totalAmount });
+    console.log('======================================');
 
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/orders`,
-        orderData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-
-      if (response.data.success) {
-        toast.success('Order placed successfully!');
-        clearCart();
-        navigate(`/order-confirmation/${response.data.order._id}`);
-      }
-    } catch (error) {
-      console.error('Error placing order:', error);
-      toast.error(error.response?.data?.message || 'Failed to place order');
-    } finally {
+    // Validation check before sending
+    if (!orderData.items[0]?.product) {
+      console.error('❌ Product ID is missing!');
+      toast.error('Product information is incomplete');
       setLoading(false);
+      return;
     }
-  };
+
+    const response = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/orders`,
+      orderData,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    );
+
+    if (response.data.success) {
+      toast.success('Order placed successfully!');
+      clearCart();
+      navigate(`/order-confirmation/${response.data.order._id}`);
+    }
+  } catch (error) {
+    console.error('❌ Error placing order:', error);
+    // Log the error response from backend if available
+    if (error.response) {
+      console.error('Server response:', error.response.data);
+      toast.error(error.response.data.message || 'Failed to place order');
+    } else {
+      toast.error('Failed to place order');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handlePlaceOrder = () => {
     if (!validateStep1()) {
