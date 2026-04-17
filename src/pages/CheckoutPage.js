@@ -4,13 +4,14 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { Helmet } from 'react-helmet-async';
+import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const CheckoutPage = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-
+  
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -22,33 +23,18 @@ const CheckoutPage = () => {
       country: 'India'
     },
     phone: user?.phone || '',
-    paymentMethod: 'RAZORPAY',
+    paymentMethod: 'COD',
     notes: ''
   });
 
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    // Load Razorpay script
-    const loadRazorpayScript = () => {
-      return new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.onload = () => resolve(true);
-        script.onerror = () => resolve(false);
-        document.body.appendChild(script);
-      });
-    };
-
-    loadRazorpayScript();
-  }, []);
-
-  useEffect(() => {
     // Redirect if cart is empty
     if (cartItems.length === 0) {
       navigate('/cart');
     }
-
+    
     // Redirect if not authenticated
     if (!isAuthenticated) {
       navigate('/login?redirect=checkout');
@@ -61,7 +47,7 @@ const CheckoutPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
+    
     if (name.startsWith('address.')) {
       const addressField = name.split('.')[1];
       setFormData(prev => ({
@@ -77,7 +63,7 @@ const CheckoutPage = () => {
         [name]: value
       }));
     }
-
+    
     // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -86,14 +72,14 @@ const CheckoutPage = () => {
 
   const validateStep1 = () => {
     const newErrors = {};
-
+    
     // Phone validation
     if (!formData.phone) {
       newErrors.phone = 'Phone number is required';
     } else if (!/^[0-9]{10}$/.test(formData.phone)) {
       newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
-
+    
     // Address validation
     if (!formData.shippingAddress.street) {
       newErrors['address.street'] = 'Street address is required';
@@ -109,7 +95,7 @@ const CheckoutPage = () => {
     } else if (!/^[0-9]{6}$/.test(formData.shippingAddress.pincode)) {
       newErrors['address.pincode'] = 'Please enter a valid 6-digit pincode';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -124,221 +110,60 @@ const CheckoutPage = () => {
     setStep(step - 1);
   };
 
-  // Razorpay payment handler
-  const handleRazorpayPayment = async () => {
-    setLoading(true);
-
-    try {
-      // First create Razorpay order
-      const orderResponse = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/orders/create-order`,
-        {
-          amount: total,
-          currency: 'INR',
-          receipt: `receipt_${Date.now()}`
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-
-      const { orderId } = orderResponse.data;
-
-      // Prepare order data for after payment
-      const orderData = {
-        items: cartItems.map(item => ({
-          product: item.product,
-          quantity: Number(item.quantity),
-          price: Number(item.price)
-        })),
-        shippingAddress: {
-          street: String(formData.shippingAddress.street || ''),
-          city: String(formData.shippingAddress.city || ''),
-          state: String(formData.shippingAddress.state || ''),
-          pincode: String(formData.shippingAddress.pincode || ''),
-          country: String(formData.shippingAddress.country || 'India'),
-          phone: String(formData.phone || '')
-        },
-        paymentMethod: String(formData.paymentMethod),
-        notes: String(formData.notes || ''),
-        subtotal: Number(subtotal),
-        totalAmount: Number(total)
-      };
-
-      // Configure Razorpay options
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: total * 100,
-        currency: 'INR',
-        name: 'Elite Aquarium',
-        description: `Payment for ${cartItems.length} items`,
-        image: 'https://eliteaquariumandpetstore.com/logo.png',
-        order_id: orderId,
-        handler: async (response) => {
-          try {
-            // Verify payment on backend
-            const verifyResponse = await axios.post(
-              `${process.env.REACT_APP_API_URL}/api/orders/verify-payment`,
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                amount: total,
-                products: orderData.items
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-              }
-            );
-
-            if (verifyResponse.data.success) {
-              // Create final order in database
-              const orderResponse = await axios.post(
-                `${process.env.REACT_APP_API_URL}/api/orders`,
-                orderData,
-                {
-                  headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
-              );
-
-              if (orderResponse.data.success) {
-                toast.success('Payment successful! Order placed.');
-                clearCart();
-                navigate(`/order-confirmation/${orderResponse.data.order._id}`);
-              }
-            }
-          } catch (error) {
-            console.error('Verification error:', error);
-            toast.error('Payment verification failed. Please contact support.');
-          }
-          setLoading(false);
-        },
-        prefill: {
-          name: user?.name || '',
-          email: user?.email || '',
-          contact: formData.phone
-        },
-        notes: {
-          address: `${formData.shippingAddress.street}, ${formData.shippingAddress.city}, ${formData.shippingAddress.state} - ${formData.shippingAddress.pincode}`
-        },
-        theme: {
-          color: '#667eea'
-        },
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
-            toast.error('Payment cancelled');
-          }
-        }
-      };
-
-      // Open Razorpay checkout
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-
-      // Handle payment failures
-      razorpay.on('payment.failed', (response) => {
-        console.error('Payment failed:', response.error);
-        toast.error(`Payment failed: ${response.error.description}`);
-        setLoading(false);
-      });
-
-    } catch (error) {
-      console.error('Error initiating payment:', error);
-      toast.error(error.response?.data?.message || 'Failed to initiate payment');
-      setLoading(false);
-    }
-  };
-
-  // COD payment handler
-const handleCODPayment = async () => {
-  setLoading(true);
-
-  try {
-    const orderData = {
-      items: cartItems.map(item => ({
-        product: item.product,
-        quantity: Number(item.quantity),
-        price: Number(item.price)
-      })),
-      shippingAddress: {
-        street: String(formData.shippingAddress.street || ''),
-        city: String(formData.shippingAddress.city || ''),
-        state: String(formData.shippingAddress.state || ''),
-        pincode: String(formData.shippingAddress.pincode || ''),
-        country: String(formData.shippingAddress.country || 'India'),
-        phone: String(formData.phone || '')
-      },
-      paymentMethod: 'COD',
-      notes: String(formData.notes || ''),
-      subtotal: Number(subtotal),
-      totalAmount: Number(total)
-    };
-
-    // Log the data being sent
-    console.log('📤 Sending order data:', JSON.stringify(orderData, null, 2));
-
-    const response = await axios.post(
-      `${process.env.REACT_APP_API_URL}/api/orders`,
-      orderData,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      }
-    );
-
-    if (response.data.success) {
-      toast.success('Order placed successfully!');
-      clearCart();
-      navigate(`/order-confirmation/${response.data.order._id}`);
-    }
-  } catch (error) {
-    console.error('❌ Error placing order:', error);
-    
-    // 🔥 THIS WILL SHOW THE EXACT ERROR FROM BACKEND
-    if (error.response) {
-      console.log('📋 Error Status:', error.response.status);
-      console.log('📋 Error Headers:', error.response.headers);
-      console.log('📋 Error Data:', error.response.data);
-      
-      // Show error in toast
-      const errorMessage = error.response.data.message || 
-                          error.response.data.error || 
-                          'Failed to place order';
-      toast.error(errorMessage);
-      
-      // Alert with full error for debugging
-      alert('Check console for full error details');
-    } else if (error.request) {
-      console.log('📋 No response received:', error.request);
-      toast.error('No response from server');
-    } else {
-      console.log('📋 Error:', error.message);
-      toast.error('Error: ' + error.message);
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!validateStep1()) {
       setStep(1);
       toast.error('Please fill in all required fields');
       return;
     }
 
-    if (formData.paymentMethod === 'RAZORPAY') {
-      handleRazorpayPayment();
-    } else {
-      handleCODPayment();
+    setLoading(true);
+
+    try {
+      // Prepare order data with the correct structure
+      const orderData = {
+        items: cartItems.map(item => ({
+          product: item.product,
+          quantity: item.quantity
+        })),
+        shippingAddress: {
+          street: formData.shippingAddress.street,
+          city: formData.shippingAddress.city,
+          state: formData.shippingAddress.state,
+          pincode: formData.shippingAddress.pincode,
+          country: formData.shippingAddress.country,
+          phone: formData.phone  // Make sure phone is inside shippingAddress
+        },
+        paymentMethod: formData.paymentMethod,
+        notes: formData.notes,
+        subtotal: subtotal,
+        totalAmount: total
+      };
+
+      console.log('Placing order with data:', JSON.stringify(orderData, null, 2));
+
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/orders`,
+        orderData
+      );
+
+      console.log('Order response:', response.data);
+
+      if (response.data.success) {
+        toast.success('Order placed successfully!');
+        clearCart();
+        navigate(`/order-confirmation/${response.data.order._id}`);
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      // Show detailed error message
+      const errorMessage = error.response?.data?.message || 'Failed to place order. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -374,7 +199,7 @@ const handleCODPayment = async () => {
             {step === 1 && (
               <div className="shipping-form">
                 <h2>Shipping Information</h2>
-
+                
                 <div className="form-group">
                   <label htmlFor="phone">Phone Number *</label>
                   <input
@@ -474,51 +299,12 @@ const handleCODPayment = async () => {
                   />
                 </div>
 
-                <div className="payment-method-section">
-                  <h3>Payment Method</h3>
-                  <div className="payment-options">
-                    <label className="payment-option">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="RAZORPAY"
-                        checked={formData.paymentMethod === 'RAZORPAY'}
-                        onChange={handleInputChange}
-                      />
-                      <div className="payment-option-content">
-                        <span className="payment-icon">💳</span>
-                        <div>
-                          <span className="payment-name">Razorpay</span>
-                          <span className="payment-description">Credit/Debit Card, UPI, NetBanking, Wallet</span>
-                        </div>
-                      </div>
-                    </label>
-
-                    <label className="payment-option">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="COD"
-                        checked={formData.paymentMethod === 'COD'}
-                        onChange={handleInputChange}
-                      />
-                      <div className="payment-option-content">
-                        <span className="payment-icon">💵</span>
-                        <div>
-                          <span className="payment-name">Cash on Delivery</span>
-                          <span className="payment-description">Pay when you receive your order</span>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
                 <div className="form-actions">
                   <Link to="/cart" className="back-btn">
                     ← Back to Cart
                   </Link>
                   <button onClick={handleNextStep} className="next-btn">
-                    Continue to Review
+                    Continue to Payment
                   </button>
                 </div>
               </div>
@@ -527,7 +313,7 @@ const handleCODPayment = async () => {
             {step === 2 && (
               <div className="review-section">
                 <h2>Review Your Order</h2>
-
+                
                 <div className="review-card">
                   <h3>Shipping Address</h3>
                   <div className="review-content">
@@ -544,18 +330,10 @@ const handleCODPayment = async () => {
                 <div className="review-card">
                   <h3>Payment Method</h3>
                   <div className="payment-method-display">
-                    <span className="payment-icon">
-                      {formData.paymentMethod === 'RAZORPAY' ? '💳' : '💵'}
-                    </span>
+                    <span className="payment-icon">💵</span>
                     <div>
-                      <p className="payment-name">
-                        {formData.paymentMethod === 'RAZORPAY' ? 'Online Payment (Razorpay)' : 'Cash on Delivery'}
-                      </p>
-                      <p className="payment-note">
-                        {formData.paymentMethod === 'RAZORPAY' 
-                          ? 'Pay via Card, UPI, NetBanking, or Wallet' 
-                          : 'Pay with cash when your order arrives'}
-                      </p>
+                      <p className="payment-name">Cash on Delivery (COD)</p>
+                      <p className="payment-note">Pay with cash when your order arrives</p>
                     </div>
                   </div>
                 </div>
@@ -582,13 +360,12 @@ const handleCODPayment = async () => {
                   <button onClick={handlePrevStep} className="back-btn">
                     ← Back
                   </button>
-                  <button
-                    onClick={handlePlaceOrder}
+                  <button 
+                    onClick={handlePlaceOrder} 
                     className="place-order-btn"
                     disabled={loading}
                   >
-                    {loading ? 'Processing...' : 
-                     formData.paymentMethod === 'RAZORPAY' ? 'Pay Now' : 'Place Order (COD)'}
+                    {loading ? 'Placing Order...' : 'Place Order'}
                   </button>
                 </div>
               </div>
@@ -599,7 +376,7 @@ const handleCODPayment = async () => {
           <div className="checkout-sidebar">
             <div className="order-summary">
               <h3>Order Summary</h3>
-
+              
               <div className="summary-items">
                 {cartItems.map(item => (
                   <div key={item.product} className="summary-item">
@@ -613,7 +390,7 @@ const handleCODPayment = async () => {
                 <span>Subtotal</span>
                 <span>₹{subtotal.toLocaleString()}</span>
               </div>
-
+              
               <div className="summary-row">
                 <span>Shipping</span>
                 {shipping === 0 ? (
@@ -622,7 +399,7 @@ const handleCODPayment = async () => {
                   <span>₹{shipping}</span>
                 )}
               </div>
-
+              
               <div className="summary-total">
                 <span>Total</span>
                 <span className="total-amount">₹{total.toLocaleString()}</span>
@@ -630,11 +407,7 @@ const handleCODPayment = async () => {
 
               <div className="delivery-info">
                 <p>🚚 Estimated delivery: 3-5 business days</p>
-                {formData.paymentMethod === 'RAZORPAY' ? (
-                  <p>💳 Secure payment via Razorpay</p>
-                ) : (
-                  <p>💵 Pay with cash on delivery</p>
-                )}
+                <p>💵 Pay with cash on delivery</p>
               </div>
             </div>
           </div>
@@ -642,64 +415,6 @@ const handleCODPayment = async () => {
       </div>
 
       <style>{`
-        .payment-method-section {
-          margin: 30px 0;
-        }
-
-        .payment-method-section h3 {
-          font-size: 18px;
-          color: #333;
-          margin-bottom: 15px;
-        }
-
-        .payment-options {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-        }
-
-        .payment-option {
-          display: flex;
-          align-items: flex-start;
-          padding: 15px;
-          border: 2px solid #e1e1e1;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-
-        .payment-option:hover {
-          border-color: #667eea;
-        }
-
-        .payment-option input[type="radio"] {
-          margin-right: 15px;
-          margin-top: 5px;
-        }
-
-        .payment-option-content {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          flex: 1;
-        }
-
-        .payment-icon {
-          font-size: 24px;
-        }
-
-        .payment-name {
-          display: block;
-          font-weight: 600;
-          color: #333;
-          margin-bottom: 4px;
-        }
-
-        .payment-description {
-          font-size: 13px;
-          color: #666;
-        }
-
         .checkout-page {
           max-width: 1400px;
           margin: 0 auto;
@@ -907,6 +622,7 @@ const handleCODPayment = async () => {
           cursor: not-allowed;
         }
 
+        /* Review Section */
         .review-card {
           border: 2px solid #f0f0f0;
           border-radius: 8px;
@@ -1008,6 +724,7 @@ const handleCODPayment = async () => {
           color: #667eea;
         }
 
+        /* Sidebar */
         .checkout-sidebar {
           position: sticky;
           top: 90px;
@@ -1094,6 +811,7 @@ const handleCODPayment = async () => {
           font-size: 13px;
         }
 
+        /* Responsive */
         @media (max-width: 1024px) {
           .checkout-container {
             grid-template-columns: 1fr;
