@@ -11,7 +11,7 @@ const AdminProducts = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [_imageFile, setImageFile] = useState(null); // eslint-disable-line no-unused-vars
+  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -58,6 +58,10 @@ const AdminProducts = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Log the change for debugging
+    console.log(`Field ${name} changed to:`, value);
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -69,12 +73,9 @@ const AdminProducts = () => {
     if (file) {
       setImageFile(file);
 
-      // Create a URL for preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
-
-        // Store the image as a data URL in the form
         setFormData(prev => ({
           ...prev,
           images: [{ url: reader.result, alt: prev.name }]
@@ -133,31 +134,66 @@ const AdminProducts = () => {
     e.preventDefault();
 
     try {
-      // Validate form
-      if (!formData.name || !formData.price || !formData.stock) {
-        toast.error('Please fill all required fields');
+      // Log the current form data for debugging
+      console.log('Current form data before validation:', formData);
+      
+      // Validate form with proper checks
+      if (!formData.name || !formData.name.trim()) {
+        toast.error('Product name is required');
+        return;
+      }
+      
+      // IMPORTANT: Check if price is valid (not empty, not NaN, greater than 0)
+      console.log('Price value:', formData.price, 'Type:', typeof formData.price);
+      
+      if (!formData.price || formData.price === '') {
+        toast.error('Price is required');
+        return;
+      }
+      
+      const priceValue = Number(formData.price);
+      console.log('Converted price value:', priceValue, 'Type:', typeof priceValue);
+      
+      if (isNaN(priceValue) || priceValue <= 0) {
+        toast.error('Please enter a valid price (greater than 0)');
+        return;
+      }
+      
+      // Check stock
+      if (!formData.stock || formData.stock === '') {
+        toast.error('Stock quantity is required');
+        return;
+      }
+      
+      const stockValue = Number(formData.stock);
+      if (isNaN(stockValue) || stockValue < 0) {
+        toast.error('Please enter a valid stock quantity');
+        return;
+      }
+      
+      if (!formData.description || !formData.description.trim()) {
+        toast.error('Product description is required');
         return;
       }
 
-      // Prepare product data
+      // Prepare product data with proper number conversion
       const productData = {
-        ...formData,
-        price: Number(formData.price),
-        stock: Number(formData.stock),
+        name: formData.name.trim(),
+        category: formData.category,
+        description: formData.description.trim(),
+        price: priceValue,
+        stock: stockValue,
+        isFeatured: formData.isFeatured || false,
+        images: formData.images[0]?.url ? formData.images : [{ url: '/assets/placeholders/no-image.jpg', alt: formData.name }],
         createdAt: new Date().toISOString()
       };
 
-      // Make sure images array is properly formatted
-      if (!productData.images || !productData.images[0] || !productData.images[0].url) {
-        productData.images = [{ url: '/assets/placeholders/no-image.jpg', alt: productData.name }];
-      }
+      console.log('Sending product data to backend:', JSON.stringify(productData, null, 2));
 
       if (editingProduct) {
-        // Update existing product
         await axios.put(`${process.env.REACT_APP_API_URL}/api/products/${editingProduct._id}`, productData);
         toast.success('Product updated successfully');
       } else {
-        // Create new product
         await axios.post(`${process.env.REACT_APP_API_URL}/api/products`, productData);
         toast.success('Product added successfully');
       }
@@ -167,7 +203,11 @@ const AdminProducts = () => {
       fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
-      toast.error('Failed to save product: ' + (error.response?.data?.message || error.message));
+      console.error('Error response data:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save product';
+      toast.error(errorMessage);
     }
   };
 
@@ -363,7 +403,7 @@ const AdminProducts = () => {
                       value={formData.price}
                       onChange={handleInputChange}
                       required
-                      min="0"
+                      min="1"
                       step="1"
                       placeholder="Enter price"
                     />
