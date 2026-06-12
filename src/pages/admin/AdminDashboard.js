@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { Helmet } from 'react-helmet-async';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -17,19 +18,29 @@ const AdminDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [lastCheckedOrders, setLastCheckedOrders] = useState(0);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
+    fetchPendingOrdersCount();
+    
+    // Poll for new orders every 30 seconds
+    const interval = setInterval(() => {
+      fetchPendingOrdersCount();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       setError(null);
-      console.log('Fetching admin dashboard data...'); // Debug log
+      console.log('Fetching admin dashboard data...');
       
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/stats`);
-      console.log('Dashboard response:', response.data); // Debug log
+      console.log('Dashboard response:', response.data);
       
       if (response.data.success) {
         setStats(response.data.stats);
@@ -42,6 +53,32 @@ const AdminDashboard = () => {
       setError(error.response?.data?.message || 'Error loading dashboard. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPendingOrdersCount = async () => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/orders?status=Processing`);
+      const pendingCount = response.data.orders?.length || 0;
+      
+      // Show notification if new orders arrived
+      if (pendingCount > lastCheckedOrders && lastCheckedOrders !== 0) {
+        const newOrdersCount = pendingCount - lastCheckedOrders;
+        toast.success(`🛒 ${newOrdersCount} new order${newOrdersCount > 1 ? 's' : ''} pending!`, {
+          duration: 5000,
+          icon: '📦',
+          style: {
+            background: '#ffc107',
+            color: '#333',
+            fontWeight: 'bold'
+          }
+        });
+      }
+      
+      setLastCheckedOrders(pendingCount);
+      setStats(prev => ({ ...prev, pendingOrders: pendingCount }));
+    } catch (error) {
+      console.error('Error fetching pending orders:', error);
     }
   };
 
@@ -68,10 +105,55 @@ const AdminDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Admin Dashboard - AquaWorld</title>
+        <title>Admin Dashboard - Elite Aquarium</title>
       </Helmet>
 
       <div className="admin-dashboard">
+        {/* Notification Bell */}
+        <div className="notification-bell" onClick={() => setShowNotifications(!showNotifications)}>
+          <span className="bell-icon">🔔</span>
+          {stats.pendingOrders > 0 && (
+            <span className="notification-badge">{stats.pendingOrders}</span>
+          )}
+          {showNotifications && (
+            <div className="notification-dropdown">
+              <div className="notification-header">
+                <h4>Notifications</h4>
+                <button onClick={() => setShowNotifications(false)}>✕</button>
+              </div>
+              <div className="notification-list">
+                {stats.pendingOrders > 0 ? (
+                  <>
+                    <div className="notification-item urgent">
+                      <span className="notification-icon">🛒</span>
+                      <div className="notification-content">
+                        <strong>{stats.pendingOrders} New Order{stats.pendingOrders > 1 ? 's' : ''}</strong>
+                        <p>Pending processing</p>
+                      </div>
+                      <Link to="/admin/orders" className="notification-link" onClick={() => setShowNotifications(false)}>View →</Link>
+                    </div>
+                    <div className="notification-divider"></div>
+                  </>
+                ) : (
+                  <div className="notification-item no-notifications">
+                    <span>✅ No pending orders</span>
+                  </div>
+                )}
+                {stats.lowStockProducts > 0 && (
+                  <div className="notification-item warning">
+                    <span className="notification-icon">⚠️</span>
+                    <div className="notification-content">
+                      <strong>Low Stock Alert</strong>
+                      <p>{stats.lowStockProducts} product{stats.lowStockProducts > 1 ? 's are' : ' is'} running low</p>
+                    </div>
+                    <Link to="/admin/products?filter=lowstock" className="notification-link" onClick={() => setShowNotifications(false)}>Check →</Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Header */}
         <div className="dashboard-header">
           <div>
@@ -79,7 +161,8 @@ const AdminDashboard = () => {
             <p>Here's what's happening with your store today.</p>
           </div>
           <div className="header-actions">
-            <Link to="/admin/products/new" className="btn-primary">
+            <Link to="/admin/products/add" className="btn-primary">
+              {stats.pendingOrders > 0 && <span className="btn-badge">{stats.pendingOrders}</span>}
               + Add New Product
             </Link>
           </div>
@@ -96,11 +179,14 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card orders-card">
             <div className="stat-icon orders">📦</div>
             <div className="stat-content">
               <h3>Total Orders</h3>
               <p className="stat-value">{stats.totalOrders}</p>
+              {stats.pendingOrders > 0 && (
+                <span className="pending-badge">{stats.pendingOrders} Pending</span>
+              )}
               <Link to="/admin/orders" className="stat-link">View All →</Link>
             </div>
           </div>
@@ -124,6 +210,20 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Pending Orders Alert */}
+        {stats.pendingOrders > 0 && (
+          <div className="alert-card urgent">
+            <div className="alert-icon">🛒</div>
+            <div className="alert-content">
+              <h3>New Orders Pending!</h3>
+              <p>You have {stats.pendingOrders} order{stats.pendingOrders > 1 ? 's' : ''} waiting for processing.</p>
+              <Link to="/admin/orders?status=Processing" className="alert-link">
+                Review Orders Now →
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions */}
         <div className="quick-actions">
           <h2>Quick Actions</h2>
@@ -137,6 +237,9 @@ const AdminDashboard = () => {
               <span className="action-icon">📋</span>
               <h3>Manage Orders</h3>
               <p>View and update order status</p>
+              {stats.pendingOrders > 0 && (
+                <span className="action-badge">{stats.pendingOrders} New</span>
+              )}
             </Link>
             <Link to="/admin/users" className="action-card">
               <span className="action-icon">👥</span>
@@ -174,23 +277,24 @@ const AdminDashboard = () => {
                 </thead>
                 <tbody>
                   {recentOrders.map(order => (
-                    <tr key={order._id}>
-                      <td>#{order._id?.slice(-6) || 'N/A'}</td>
-                      <td>
+                    <tr key={order._id} className={order.orderStatus === 'Processing' ? 'pending-row' : ''}>
+                      <td className="order-id">#{order._id?.slice(-6) || 'N/A'}</td>
+                      <td className="customer-cell">
                         <div className="customer-info">
                           <strong>{order.user?.name || 'Guest'}</strong>
                           <small>{order.user?.email || 'No email'}</small>
                         </div>
-                      </td>
-                      <td>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</td>
+                       </td>
+                      <td className="date-cell">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</td>
                       <td className="order-total">₹{(order.totalAmount || 0).toLocaleString()}</td>
-                      <td>
+                      <td className="status-cell">
                         <span className={`status-badge status-${order.orderStatus?.toLowerCase() || 'pending'}`}>
+                          {order.orderStatus === 'Processing' && '🔄 '}
                           {order.orderStatus || 'Pending'}
                         </span>
                       </td>
-                      <td>{order.paymentMethod || 'COD'}</td>
-                      <td>
+                      <td className="payment-cell">{order.paymentMethod || 'COD'}</td>
+                      <td className="action-cell">
                         <Link to={`/admin/orders/${order._id}`} className="view-btn">
                           View
                         </Link>
@@ -225,6 +329,165 @@ const AdminDashboard = () => {
           max-width: 1400px;
           margin: 0 auto;
           padding: 30px;
+          position: relative;
+        }
+
+        /* Notification Bell */
+        .notification-bell {
+          position: fixed;
+          top: 90px;
+          right: 30px;
+          cursor: pointer;
+          z-index: 100;
+          background: white;
+          width: 45px;
+          height: 45px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          transition: all 0.3s;
+        }
+
+        .notification-bell:hover {
+          transform: scale(1.05);
+          box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .bell-icon {
+          font-size: 22px;
+        }
+
+        .notification-badge {
+          position: absolute;
+          top: -5px;
+          right: -5px;
+          background: #ff4757;
+          color: white;
+          font-size: 11px;
+          font-weight: 600;
+          min-width: 20px;
+          height: 20px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+        }
+
+        .notification-dropdown {
+          position: absolute;
+          top: 50px;
+          right: 0;
+          width: 320px;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+          z-index: 1000;
+          animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .notification-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px;
+          border-bottom: 2px solid #f0f0f0;
+        }
+
+        .notification-header h4 {
+          font-size: 16px;
+          color: #333;
+          margin: 0;
+        }
+
+        .notification-header button {
+          background: none;
+          border: none;
+          font-size: 18px;
+          cursor: pointer;
+          color: #999;
+        }
+
+        .notification-list {
+          max-height: 400px;
+          overflow-y: auto;
+        }
+
+        .notification-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 15px;
+          transition: background 0.3s;
+        }
+
+        .notification-item:hover {
+          background: #f8f9fa;
+        }
+
+        .notification-item.urgent {
+          background: #fff3cd;
+          border-left: 3px solid #ffc107;
+        }
+
+        .notification-item.warning {
+          background: #f8d7da;
+          border-left: 3px solid #dc3545;
+        }
+
+        .notification-icon {
+          font-size: 24px;
+        }
+
+        .notification-content {
+          flex: 1;
+        }
+
+        .notification-content strong {
+          display: block;
+          font-size: 14px;
+          color: #333;
+        }
+
+        .notification-content p {
+          font-size: 12px;
+          color: #666;
+          margin: 0;
+        }
+
+        .notification-link {
+          color: #667eea;
+          text-decoration: none;
+          font-size: 13px;
+        }
+
+        .notification-divider {
+          height: 1px;
+          background: #f0f0f0;
+        }
+
+        .no-notifications {
+          text-align: center;
+          color: #999;
+          padding: 20px;
         }
 
         .error-container {
@@ -303,6 +566,18 @@ const AdminDashboard = () => {
           text-decoration: none;
           border-radius: 8px;
           font-weight: 600;
+          position: relative;
+        }
+
+        .btn-badge {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          background: #ff4757;
+          color: white;
+          font-size: 12px;
+          padding: 2px 6px;
+          border-radius: 20px;
         }
 
         .stats-grid {
@@ -320,6 +595,28 @@ const AdminDashboard = () => {
           display: flex;
           align-items: center;
           gap: 20px;
+          transition: transform 0.3s, box-shadow 0.3s;
+          position: relative;
+        }
+
+        .stat-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .stat-card.orders-card {
+          position: relative;
+        }
+
+        .pending-badge {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          background: #ff4757;
+          color: white;
+          font-size: 11px;
+          padding: 2px 8px;
+          border-radius: 20px;
         }
 
         .stat-icon {
@@ -357,6 +654,57 @@ const AdminDashboard = () => {
           font-size: 13px;
         }
 
+        .alert-card {
+          margin-bottom: 30px;
+          padding: 20px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .alert-card.urgent {
+          background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+          border-left: 4px solid #ffc107;
+        }
+
+        .alert-card.warning {
+          background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+          border-left: 4px solid #dc3545;
+        }
+
+        .alert-icon {
+          font-size: 40px;
+        }
+
+        .alert-content h3 {
+          font-size: 18px;
+          margin-bottom: 5px;
+        }
+
+        .alert-content p {
+          color: #666;
+          margin-bottom: 10px;
+        }
+
+        .alert-link {
+          color: #667eea;
+          font-weight: 600;
+          text-decoration: none;
+        }
+
         .quick-actions {
           margin-bottom: 40px;
         }
@@ -381,6 +729,7 @@ const AdminDashboard = () => {
           box-shadow: 0 2px 10px rgba(0,0,0,0.1);
           transition: all 0.3s;
           text-align: center;
+          position: relative;
         }
 
         .action-card:hover {
@@ -395,6 +744,17 @@ const AdminDashboard = () => {
           display: block;
         }
 
+        .action-badge {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          background: #ff4757;
+          color: white;
+          font-size: 11px;
+          padding: 2px 8px;
+          border-radius: 20px;
+        }
+
         .recent-orders {
           background: white;
           border-radius: 10px;
@@ -407,6 +767,15 @@ const AdminDashboard = () => {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 20px;
+        }
+
+        .view-all {
+          color: #667eea;
+          text-decoration: none;
+        }
+
+        .orders-table-container {
+          overflow-x: auto;
         }
 
         .orders-table {
@@ -428,6 +797,26 @@ const AdminDashboard = () => {
           border-bottom: 1px solid #eee;
         }
 
+        .orders-table .pending-row {
+          background: #fff3cd;
+          animation: highlightRow 1s ease-in-out;
+        }
+
+        @keyframes highlightRow {
+          0% { background: #ffeaa7; }
+          100% { background: #fff3cd; }
+        }
+
+        .order-id {
+          font-weight: 600;
+          color: #333;
+        }
+
+        .order-total {
+          font-weight: 600;
+          color: #28a745;
+        }
+
         .status-badge {
           display: inline-block;
           padding: 4px 8px;
@@ -436,12 +825,28 @@ const AdminDashboard = () => {
           font-weight: 600;
         }
 
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-processing { background: #cce5ff; color: #004085; }
-        .status-delivered { background: #d4edda; color: #155724; }
-        .status-cancelled { background: #f8d7da; color: #721c24; }
+        .status-processing {
+          background: #fff3cd;
+          color: #856404;
+        }
+
+        .status-confirmed {
+          background: #cce5ff;
+          color: #004085;
+        }
+
+        .status-shipped {
+          background: #d1ecf1;
+          color: #0c5460;
+        }
+
+        .status-delivered {
+          background: #d4edda;
+          color: #155724;
+        }
 
         .view-btn {
+          display: inline-block;
           padding: 4px 12px;
           background: #667eea;
           color: white;
@@ -450,19 +855,25 @@ const AdminDashboard = () => {
           font-size: 12px;
         }
 
-        .alert-card.warning {
-          margin-top: 30px;
-          padding: 20px;
-          background: #fff3cd;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          gap: 20px;
+        .no-data {
+          text-align: center;
+          color: #999;
+          padding: 40px;
         }
 
         @media (max-width: 768px) {
-          .admin-dashboard { padding: 20px; }
-          .stats-grid { grid-template-columns: 1fr; }
+          .admin-dashboard {
+            padding: 20px;
+          }
+          
+          .notification-bell {
+            top: 80px;
+            right: 20px;
+          }
+
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </>
