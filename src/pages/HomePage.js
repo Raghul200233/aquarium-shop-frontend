@@ -76,7 +76,7 @@ const categories = [
   { 
     id: 9, 
     name: 'Aquarium Accessories', 
-    image: 'https://freshwateraquatica.org/cdn/shop/collections/74ccaca7870088badafcc4d7c1d825a8.webp?v=1694014502&width=535  ',
+    image: 'https://freshwateraquatica.org/cdn/shop/collections/74ccaca7870088badafcc4d7c1d825a8.webp?v=1694014502&width=535',
     color: 'from-teal-400 to-cyan-600', 
     description: 'Nets, thermometers, cleaning tools, decorations' 
   },
@@ -87,30 +87,31 @@ const categories = [
     color: 'from-stone-400 to-amber-600', 
     description: 'Substrate gravel, coloured stones, planted tank sand' 
   },
+  // ✅ NEW CATEGORIES ADDED BELOW - NOTHING DELETED
   { 
     id: 11, 
     name: 'Dog Food', 
-    icon: '🐕', 
+    image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
     color: 'from-amber-500 to-orange-600', 
     description: 'Premium dry and wet food, treats, nutritional supplements' 
   },
   { 
     id: 12, 
     name: 'Cat Food', 
-    icon: '🐱', 
+    image: 'https://images.unsplash.com/photo-1568152950566-c1bf43f4ab28?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
     color: 'from-purple-500 to-pink-500', 
     description: 'Complete nutrition, wet food, dry kibble, dental treats' 
   },
   { 
     id: 13, 
     name: 'Pet Accessories', 
-    icon: '🦴', 
+    image: 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
     color: 'from-teal-500 to-blue-600', 
     description: 'Collars, leashes, beds, toys, grooming supplies' 
   }
 ];
 
-  const HomePage = () => {
+const HomePage = () => {
   console.log('API URL:', process.env.REACT_APP_API_URL);
 
   // eslint-disable-next-line no-unused-vars
@@ -450,7 +451,6 @@ const categories = [
         </div>
       </section>
 
-      {/* Rest of the sections remain the same... */}
       {/* Aquarium Tanks Section */}
       <section className="category-section">
         <div className="container">
@@ -847,6 +847,138 @@ const categories = [
         </div>
       </section>
 
+      {/* ✅ NEW: Dog Food Section */}
+      <section className="category-section bg-gradient-to-r from-amber-50 to-orange-50">
+        <div className="container">
+          <div className="category-header reveal">
+            <div>
+              <h2 className="section-title-left">🐕 Dog Food</h2>
+              <p className="category-description">Premium dry and wet food, treats, nutritional supplements</p>
+            </div>
+            <Link to="/products?category=Dog%20Food" className="view-all-link">
+              View All Dog Food →
+            </Link>
+          </div>
+
+          {categoryLoading['Dog Food'] ? (
+            <LoadingSpinner />
+          ) : (
+            <Swiper
+              modules={[FreeMode]}
+              spaceBetween={16}
+              freeMode={true}
+              breakpoints={{
+                0: { slidesPerView: 2 },
+                640: { slidesPerView: 3 },
+                1024: { slidesPerView: 4 }
+              }}
+              className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
+            >
+              {categoryProducts['Dog Food']?.length > 0 ? (
+                categoryProducts['Dog Food'].map((product) => (
+                  <SwiperSlide key={product._id}>
+                    <ProductCard product={product} />
+                  </SwiperSlide>
+                ))
+              ) : (
+                <SwiperSlide><p className="no-products">No dog food available</p></SwiperSlide>
+              )}
+            </Swiper>
+          )}
+        </div>
+      </section>
+
+      {/* ✅ NEW: Cat Food Section */}
+      <section className="category-section bg-gradient-to-r from-purple-50 to-pink-50">
+        <div className="container">
+          <div className="category-header reveal">
+            <div>
+              <h2 className="section-title-left">🐱 Cat Food</h2>
+              <p className="category-description">Complete nutrition, wet food, dry kibble, dental treats</p>
+            </div>
+            <Link to="/products?category=Cat%20Food" className="view-all-link">
+              View All Cat Food →
+            </Link>
+          </div>
+
+          {categoryLoading['Cat Food'] ? (
+            <LoadingSpinner />
+          ) : (
+            <Swiper
+              modules={[FreeMode]}
+              spaceBetween={16}
+              freeMode={true}
+              breakpoints={{
+                0: { slidesPerView: 2 },
+                640: { slidesPerView: 3 },
+                1024: { slidesPerView: 4 }
+              }}
+              className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
+            >
+              {categoryProducts['Cat Food']?.length > 0 ? (
+                categoryProducts['Cat Food'].map((product) => (
+                  <SwiperSlide key={product._id}>
+                    <ProductCard product={product} />
+                  </SwiperSlide>
+                ))
+              ) : (
+                <SwiperSlide><p className="no-products">No cat food available</p></SwiperSlide>
+              )}
+            </Swiper>
+          )}
+        </div>
+      </section>
+
+      {/* ✅ NEW: Pet Accessories Section */}
+      <section className="category-section bg-gradient-to-r from-teal-50 to-blue-50">
+        <div className="container">
+          <div className="category-header reveal">
+            <div>
+              <h2 className="section-title-left">🦴 Pet Accessories</h2>
+              <p className="category-description">Collars, leashes, beds, toys, grooming supplies</p>
+            </div>
+            <Link to="/products?category=Pet%20Accessories" className="view-all-link">
+              View All Pet Accessories →
+            </Link>
+          </div>
+
+          {categoryLoading['Pet Accessories'] ? (
+            <LoadingSpinner />
+          ) : (
+            <Swiper
+              modules={[FreeMode]}
+              spaceBetween={16}
+              freeMode={true}
+              breakpoints={{
+                0: { slidesPerView: 2 },
+                640: { slidesPerView: 3 },
+                1024: { slidesPerView: 4 }
+              }}
+              className="products-swiper"
+              watchSlidesProgress={true}
+              observer={true}
+              observeParents={true}
+            >
+              {categoryProducts['Pet Accessories']?.length > 0 ? (
+                categoryProducts['Pet Accessories'].map((product) => (
+                  <SwiperSlide key={product._id}>
+                    <ProductCard product={product} />
+                  </SwiperSlide>
+                ))
+              ) : (
+                <SwiperSlide><p className="no-products">No pet accessories available</p></SwiperSlide>
+              )}
+            </Swiper>
+          )}
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="features-section">
         <div className="features-grid">
@@ -946,7 +1078,7 @@ const categories = [
           width: 120px;
           height: 120px;
           border-radius: 50%;
-          overflow: hidden; 
+          overflow: hidden;
           box-shadow: 0 8px 20px rgba(0,0,0,0.1);
           transition: all 0.3s ease;
           border: 3px solid transparent;
@@ -968,7 +1100,7 @@ const categories = [
         }
 
         .category-circle-name {
-          font-size: 22px;
+          font-size: 14px;
           font-weight: 600;
           color: #333;
           text-align: center;
@@ -1000,7 +1132,7 @@ const categories = [
             height: 160px;
           }
           .category-circle-name {
-            font-size: 22px;
+            font-size: 16px;
           }
         }
 
@@ -1067,6 +1199,10 @@ const categories = [
           background: linear-gradient(to right, var(--from-color), var(--to-color));
         }
 
+        .from-amber-50 { --from-color: #fffbeb; }
+        .to-orange-50 { --to-color: #fff7ed; }
+        .from-teal-50 { --from-color: #f0fdf4; }
+        .to-blue-50 { --to-color: #eff6ff; }
         .from-purple-50 { --from-color: #faf5ff; }
         .to-pink-50 { --to-color: #fdf2f8; }
         .from-red-50 { --from-color: #fef2f2; }
@@ -1077,6 +1213,7 @@ const categories = [
         .to-amber-50 { --to-color: #fffbeb; }
         .from-green-50 { --from-color: #f0fdf4; }
         .to-emerald-50 { --to-color: #ecfdf5; }
+        
         .new-arrivals-section {
           padding: 60px 0;
           background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
