@@ -16,7 +16,6 @@ const CartPage = () => {
   
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
