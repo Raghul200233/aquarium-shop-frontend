@@ -1,34 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const ProductCard = ({ product }) => {
-  // Get image URL - super simple
-const getImageUrl = () => {
-  if (!product.images || !product.images[0] || !product.images[0].url) {
-    return null;
-  }
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
 
-  let imagePath = product.images[0].url;
+  // Get image URL - handles all cases
+  const getImageUrl = () => {
+    if (!product.images || !product.images[0] || !product.images[0].url) {
+      return null;
+    }
 
-  // If it's already a full HTTP URL, use it as is.
-  if (imagePath.startsWith('http')) {
-    return imagePath;
-  }
+    let imagePath = product.images[0].url;
 
-  // For all other cases (like '/assets/...' or 'filename.jpg'),
-  // construct the absolute URL using the CORRECT frontend domain.
-  // Use the Vercel preview domain for now, as we know it works there.
-  const baseUrl = 'https://aquarium-shop-frontend-raghul200233s-projects.vercel.app';
-  
-  // Ensure the path starts with a '/'
-  const finalPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-  
-  return `${baseUrl}${finalPath}`;
-};
+    // If it's a base64 image (starts with data:image), use it directly
+    if (imagePath.startsWith('data:image')) {
+      return imagePath;
+    }
 
-  const imageUrl = getImageUrl();
+    // If it's already a full HTTP URL, use it as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
 
-  // Fallback emoji
+    // For relative paths (starts with /)
+    if (imagePath.startsWith('/')) {
+      return imagePath;
+    }
+
+    // For filenames without path, assume they're in assets
+    return `/assets/${imagePath}`;
+  };
+
+  useEffect(() => {
+    const url = getImageUrl();
+    setImageSrc(url);
+  }, [product]);
+
+  // Fallback emoji based on category
   const getCategoryEmoji = () => {
     const cat = (product.category || '').toLowerCase();
     if (cat.includes('fish')) return '🐟';
@@ -41,30 +50,28 @@ const getImageUrl = () => {
     return '🐠';
   };
 
+  const handleImageError = () => {
+    console.log(`Image failed to load for product: ${product.name}`);
+    setImageError(true);
+    setImageSrc(null);
+  };
+
   return (
     <Link to={`/product/${product._id}`} className="product-card-link">
       <div className="product-card">
         <div className="product-image-container">
-          {imageUrl ? (
+          {imageSrc && !imageError ? (
             <img 
-              src={imageUrl} 
+              src={imageSrc}
               alt={product.name}
               className="product-image"
-              onError={(e) => {
-                console.log('Image failed:', imageUrl);
-                e.target.style.display = 'none';
-                e.target.parentElement.innerHTML = `
-                  <div class="fallback-image">
-                    <span class="fallback-icon">${getCategoryEmoji()}</span>
-                    <span class="fallback-text">${product.name.substring(0, 20)}</span>
-                  </div>
-                `;
-              }}
+              onError={handleImageError}
+              loading="lazy"
             />
           ) : (
             <div className="fallback-image">
               <span className="fallback-icon">{getCategoryEmoji()}</span>
-              <span className="fallback-text">{product.name.substring(0, 20)}</span>
+              <span className="fallback-text">{product.name?.substring(0, 20)}</span>
             </div>
           )}
 
@@ -92,28 +99,37 @@ const getImageUrl = () => {
           text-decoration: none;
           color: inherit;
           display: block;
+          height: 100%;
         }
         .product-card {
           background: white;
-          border-radius: 8px;
+          border-radius: 12px;
           overflow: hidden;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          transition: transform 0.2s;
+          transition: all 0.3s ease;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
         }
         .product-card:hover {
           transform: translateY(-4px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
         }
         .product-image-container {
           position: relative;
           aspect-ratio: 1;
-          background: #f5f5f5;
+          background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+          overflow: hidden;
         }
         .product-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          transition: transform 0.3s ease;
           display: block;
+        }
+        .product-card:hover .product-image {
+          transform: scale(1.05);
         }
         .fallback-image {
           width: 100%;
@@ -124,6 +140,8 @@ const getImageUrl = () => {
           justify-content: center;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
+          text-align: center;
+          padding: 16px;
         }
         .fallback-icon {
           font-size: 48px;
@@ -131,19 +149,26 @@ const getImageUrl = () => {
         }
         .fallback-text {
           font-size: 14px;
-          font-weight: 600;
+          font-weight: 500;
+          word-break: break-word;
         }
         .stock-badge {
           position: absolute;
           top: 8px;
           right: 8px;
           padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
           color: white;
+          z-index: 2;
         }
-        .low-stock { background: #f59e0b; }
-        .out-of-stock { background: #ef4444; }
+        .low-stock { 
+          background: #f59e0b; 
+        }
+        .out-of-stock { 
+          background: #ef4444; 
+        }
         .featured-badge {
           position: absolute;
           top: 8px;
@@ -151,11 +176,16 @@ const getImageUrl = () => {
           padding: 4px 8px;
           background: #10b981;
           color: white;
-          border-radius: 4px;
-          font-size: 12px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          z-index: 2;
         }
         .product-info {
           padding: 12px;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
         }
         .product-name {
           font-size: 14px;
@@ -166,17 +196,19 @@ const getImageUrl = () => {
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
-          height: 40px;
+          line-height: 1.4;
+          min-height: 38px;
         }
         .product-category {
           font-size: 12px;
-          color: #666;
+          color: #999;
           margin-bottom: 8px;
         }
         .product-price {
           font-size: 16px;
           font-weight: 700;
           color: #667eea;
+          margin-top: auto;
         }
       `}</style>
     </Link>
