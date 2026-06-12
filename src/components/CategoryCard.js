@@ -14,7 +14,10 @@ const CategoryCard = ({ category, customIcon: CustomIcon }) => {
       'Planted Tank Lights': 'bg-planted-lights',
       'Live Fishes': 'bg-live-fishes',
       'Aquarium Accessories': 'bg-aquarium-accessories',
-      'Aquarium Stones and Sands': 'bg-aquarium-stones'
+      'Aquarium Stones and Sands': 'bg-aquarium-stones',
+      'Dog Food': 'bg-dog-food',           // ✅ NEW
+      'Cat Food': 'bg-cat-food',           // ✅ NEW
+      'Pet Accessories': 'bg-pet-accessories'  // ✅ NEW
     };
     return map[name] || 'bg-fish-medicines';
   };

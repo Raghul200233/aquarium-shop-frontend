@@ -86,6 +86,27 @@ const categories = [
     image: 'https://freshwateraquatica.org/cdn/shop/collections/547485c0bc5f41c9aa423a65b60b8e2d.jpg?v=1694014832&width=535',
     color: 'from-stone-400 to-amber-600', 
     description: 'Substrate gravel, coloured stones, planted tank sand' 
+  },
+  { 
+    id: 11, 
+    name: 'Dog Food', 
+    icon: '🐕', 
+    color: 'from-amber-500 to-orange-600', 
+    description: 'Premium dry and wet food, treats, nutritional supplements' 
+  },
+  { 
+    id: 12, 
+    name: 'Cat Food', 
+    icon: '🐱', 
+    color: 'from-purple-500 to-pink-500', 
+    description: 'Complete nutrition, wet food, dry kibble, dental treats' 
+  },
+  { 
+    id: 13, 
+    name: 'Pet Accessories', 
+    icon: '🦴', 
+    color: 'from-teal-500 to-blue-600', 
+    description: 'Collars, leashes, beds, toys, grooming supplies' 
   }
 ];
 

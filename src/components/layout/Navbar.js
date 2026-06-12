@@ -130,6 +130,9 @@ const Navbar = () => {
                           {category === 'Live Fishes' && '🐟'}
                           {category === 'Aquarium Accessories' && '🪸'}
                           {category === 'Aquarium Stones and Sands' && '🪨'}
+                          {category === 'Dog Foods' && '🔥'}
+                          {category === 'Cat Foods' && '🍖'}
+                          {category === 'Pet Accessories' && '🦴'}
                         </span>
                         <span className="category-name">{category}</span>
                       </button>
@@ -299,6 +302,9 @@ const Navbar = () => {
                   {cat === 'Live Fishes' && '🐟 '}
                   {cat === 'Aquarium Accessories' && '🪸 '}
                   {cat === 'Aquarium Stones and Sands' && '🪨 '}
+                  {cat === 'Dog Foods' && '🍖 '}
+                  {cat === 'Cat Foods' && '🍖 '}
+                  {cat === 'Pet Accessories' && '🦴 '}
                   {cat}
                 </span>
               </button>

@@ -28,7 +28,10 @@ const AdminProducts = () => {
     'Planted Tank Lights',
     'Live Fishes',
     'Aquarium Accessories',
-    'Aquarium Stones and Sands'
+    'Aquarium Stones and Sands',
+    'Dog Food',
+    'Cat Food',
+    'Pet Accessories'
   ];
 
   const [formData, setFormData] = useState({
