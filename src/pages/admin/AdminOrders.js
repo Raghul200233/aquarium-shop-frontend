@@ -11,14 +11,6 @@ const AdminOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [stats, setStats] = useState({
-    total: 0,
-    processing: 0,
-    confirmed: 0,
-    shipped: 0,
-    delivered: 0,
-    cancelled: 0
-  });
 
   useEffect(() => {
     fetchOrders();
@@ -27,19 +19,7 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/orders`);
-      const ordersData = response.data.orders || [];
-      setOrders(ordersData);
-      
-      // Calculate stats
-      const statsData = {
-        total: ordersData.length,
-        processing: ordersData.filter(o => o.orderStatus === 'Processing').length,
-        confirmed: ordersData.filter(o => o.orderStatus === 'Confirmed').length,
-        shipped: ordersData.filter(o => o.orderStatus === 'Shipped').length,
-        delivered: ordersData.filter(o => o.orderStatus === 'Delivered').length,
-        cancelled: ordersData.filter(o => o.orderStatus === 'Cancelled').length
-      };
-      setStats(statsData);
+      setOrders(response.data.orders || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
@@ -61,17 +41,6 @@ const AdminOrders = () => {
     }
   };
 
-  const getStatusConfig = (status) => {
-    const configs = {
-      'Processing': { icon: '🔄', color: '#f59e0b', bg: '#fef3c7' },
-      'Confirmed': { icon: '✓', color: '#3b82f6', bg: '#dbeafe' },
-      'Shipped': { icon: '🚚', color: '#8b5cf6', bg: '#ede9fe' },
-      'Delivered': { icon: '✅', color: '#10b981', bg: '#d1fae5' },
-      'Cancelled': { icon: '❌', color: '#ef4444', bg: '#fee2e2' }
-    };
-    return configs[status] || configs['Processing'];
-  };
-
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
       order._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -80,6 +49,17 @@ const AdminOrders = () => {
     const matchesStatus = statusFilter === 'all' || order.orderStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'Processing': return 'status-processing';
+      case 'Confirmed': return 'status-confirmed';
+      case 'Shipped': return 'status-shipped';
+      case 'Delivered': return 'status-delivered';
+      case 'Cancelled': return 'status-cancelled';
+      default: return 'status-pending';
+    }
+  };
 
   if (loading) return <LoadingSpinner />;
 
@@ -92,30 +72,15 @@ const AdminOrders = () => {
       <div className="admin-orders">
         {/* Header */}
         <div className="page-header">
-          <div>
-            <h1>📋 Order Management</h1>
-            <p className="subtitle">View and manage all customer orders</p>
-          </div>
-          <div className="stats-badge">
-            <span className="stat-badge total">
-              <span className="stat-number">{stats.total}</span>
-              <span className="stat-label">Total Orders</span>
-            </span>
-            <span className="stat-badge processing">
-              <span className="stat-number">{stats.processing}</span>
-              <span className="stat-label">Processing</span>
-            </span>
-            <span className="stat-badge delivered">
-              <span className="stat-number">{stats.delivered}</span>
-              <span className="stat-label">Delivered</span>
-            </span>
+          <h1>📋 Manage Orders</h1>
+          <div className="stats-info">
+            <span className="stat-badge">Total Orders: {orders.length}</span>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="filters-section">
+        <div className="filters-bar">
           <div className="search-box">
-            <span className="search-icon">🔍</span>
             <input
               type="text"
               placeholder="Search by Order ID, Customer Name or Email..."
@@ -123,143 +88,83 @@ const AdminOrders = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
             />
-            {searchTerm && (
-              <button className="clear-search" onClick={() => setSearchTerm('')}>✕</button>
-            )}
+            <span className="search-icon">🔍</span>
           </div>
 
-          <div className="status-filters">
-            <button 
-              className={`filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('all')}
-            >
-              All
-            </button>
-            <button 
-              className={`filter-btn ${statusFilter === 'Processing' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('Processing')}
-            >
-              🔄 Processing
-              {stats.processing > 0 && <span className="filter-count">{stats.processing}</span>}
-            </button>
-            <button 
-              className={`filter-btn ${statusFilter === 'Confirmed' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('Confirmed')}
-            >
-              ✓ Confirmed
-            </button>
-            <button 
-              className={`filter-btn ${statusFilter === 'Shipped' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('Shipped')}
-            >
-              🚚 Shipped
-            </button>
-            <button 
-              className={`filter-btn ${statusFilter === 'Delivered' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('Delivered')}
-            >
-              ✅ Delivered
-            </button>
-            <button 
-              className={`filter-btn ${statusFilter === 'Cancelled' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('Cancelled')}
-            >
-              ❌ Cancelled
-            </button>
-          </div>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="status-filter"
+          >
+            <option value="all">All Status</option>
+            <option value="Processing">Processing</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
         </div>
 
-        {/* Orders Grid */}
-        <div className="orders-grid">
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map(order => {
-              const statusConfig = getStatusConfig(order.orderStatus);
-              return (
-                <div key={order._id} className="order-card">
-                  <div className="order-card-header">
-                    <div className="order-id-section">
-                      <span className="order-id-label">Order ID</span>
-                      <span className="order-id-value">#{order._id?.slice(-8).toUpperCase()}</span>
-                    </div>
-                    <div className="order-date">
-                      <span className="date-icon">📅</span>
-                      <span>{new Date(order.createdAt).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}</span>
-                    </div>
-                  </div>
-
-                  <div className="order-card-body">
-                    <div className="customer-section">
-                      <div className="customer-avatar">
-                        {order.user?.name?.charAt(0) || 'G'}
-                      </div>
+        {/* Orders Table */}
+        <div className="orders-table-container">
+          <table className="orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map(order => (
+                  <tr key={order._id}>
+                    <td className="order-id">#{order._id?.slice(-6).toUpperCase()}</td>
+                    <td>
                       <div className="customer-info">
-                        <h4 className="customer-name">{order.user?.name || 'Guest User'}</h4>
-                        <p className="customer-email">{order.user?.email || 'No email'}</p>
-                        <p className="customer-phone">📞 {order.shippingAddress?.phone || 'N/A'}</p>
+                        <strong>{order.user?.name || 'Guest'}</strong>
+                        <small>{order.user?.email || 'No email'}</small>
                       </div>
-                    </div>
-
-                    <div className="order-details">
-                      <div className="detail-row">
-                        <span className="detail-label">Total Amount:</span>
-                        <span className="detail-value amount">₹{order.totalAmount?.toLocaleString()}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Payment:</span>
-                        <span className="detail-value">{order.paymentMethod || 'COD'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Items:</span>
-                        <span className="detail-value">{order.items?.length || 0} products</span>
-                      </div>
-                    </div>
-
-                    <div className="status-section">
-                      <div className="current-status" style={{ background: statusConfig.bg }}>
-                        <span className="status-icon">{statusConfig.icon}</span>
-                        <span className="status-text" style={{ color: statusConfig.color }}>
-                          {order.orderStatus}
-                        </span>
-                      </div>
-                      
-                      {order.orderStatus !== 'Delivered' && order.orderStatus !== 'Cancelled' && (
-                        <select
-                          value={order.orderStatus}
-                          onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                          className="status-select"
-                        >
-                          <option value="Processing">🔄 Processing</option>
-                          <option value="Confirmed">✓ Confirmed</option>
-                          <option value="Shipped">🚚 Shipped</option>
-                          <option value="Delivered">✅ Delivered</option>
-                          <option value="Cancelled">❌ Cancelled</option>
-                        </select>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="order-card-footer">
-                    <button 
-                      className="view-order-btn"
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      View Order Details
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="no-results">
-              <div className="no-results-icon">📭</div>
-              <h3>No orders found</h3>
-              <p>Try adjusting your search or filter criteria</p>
-            </div>
-          )}
+                    </td>
+                    <td className="date-cell">
+                      {new Date(order.createdAt).toLocaleDateString('en-IN')}
+                    </td>
+                    <td className="order-total">₹{order.totalAmount?.toLocaleString()}</td>
+                    <td>
+                      <select
+                        value={order.orderStatus}
+                        onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                        className={`status-select ${getStatusColor(order.orderStatus)}`}
+                      >
+                        <option value="Processing">Processing</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </td>
+                    <td>{order.paymentMethod || 'COD'}</td>
+                    <td>
+                      <button 
+                        className="view-btn"
+                        onClick={() => setSelectedOrder(order)}
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="no-data">No orders found</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         {/* Order Details Modal */}
@@ -267,93 +172,81 @@ const AdminOrders = () => {
           <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <div className="modal-title">
-                  <span className="modal-icon">📋</span>
-                  <h2>Order Details</h2>
-                </div>
+                <h2>Order Details</h2>
                 <button className="close-btn" onClick={() => setSelectedOrder(null)}>×</button>
               </div>
               
               <div className="modal-body">
-                {/* Order Header */}
-                <div className="order-header-info">
-                  <div className="info-box">
-                    <span className="info-label">Order ID</span>
-                    <span className="info-value">#{selectedOrder._id?.slice(-8).toUpperCase()}</span>
+                <div className="details-grid">
+                  <div>
+                    <label>Order ID</label>
+                    <p>#{selectedOrder._id?.slice(-8).toUpperCase()}</p>
                   </div>
-                  <div className="info-box">
-                    <span className="info-label">Order Date</span>
-                    <span className="info-value">{new Date(selectedOrder.createdAt).toLocaleString()}</span>
+                  <div>
+                    <label>Order Date</label>
+                    <p>{new Date(selectedOrder.createdAt).toLocaleString()}</p>
                   </div>
-                  <div className="info-box">
-                    <span className="info-label">Payment Method</span>
-                    <span className="info-value">{selectedOrder.paymentMethod || 'COD'}</span>
+                  <div>
+                    <label>Payment Method</label>
+                    <p>{selectedOrder.paymentMethod || 'COD'}</p>
                   </div>
-                  <div className="info-box">
-                    <span className="info-label">Status</span>
-                    <span className={`status-badge status-${selectedOrder.orderStatus?.toLowerCase()}`}>
+                  <div>
+                    <label>Order Status</label>
+                    <p className={`status-badge ${getStatusColor(selectedOrder.orderStatus)}`}>
                       {selectedOrder.orderStatus}
-                    </span>
+                    </p>
                   </div>
                 </div>
 
-                {/* Customer Information */}
-                <div className="detail-section">
-                  <h4>👤 Customer Information</h4>
-                  <div className="customer-details">
-                    <p><strong>Name:</strong> {selectedOrder.user?.name || 'Guest User'}</p>
-                    <p><strong>Email:</strong> {selectedOrder.user?.email || 'N/A'}</p>
-                    <p><strong>Phone:</strong> {selectedOrder.shippingAddress?.phone || 'N/A'}</p>
+                <div className="details-section">
+                  <h3>Customer Information</h3>
+                  <div className="info-row">
+                    <span>Name:</span>
+                    <strong>{selectedOrder.user?.name || 'Guest'}</strong>
+                  </div>
+                  <div className="info-row">
+                    <span>Email:</span>
+                    <strong>{selectedOrder.user?.email || 'N/A'}</strong>
+                  </div>
+                  <div className="info-row">
+                    <span>Phone:</span>
+                    <strong>{selectedOrder.shippingAddress?.phone || 'N/A'}</strong>
                   </div>
                 </div>
 
-                {/* Shipping Address */}
-                <div className="detail-section">
-                  <h4>📍 Shipping Address</h4>
-                  <div className="address-box">
-                    <p>{selectedOrder.shippingAddress?.street}</p>
-                    <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state}</p>
-                    <p>PIN: {selectedOrder.shippingAddress?.pincode}</p>
-                    <p>{selectedOrder.shippingAddress?.country || 'India'}</p>
-                  </div>
+                <div className="details-section">
+                  <h3>Shipping Address</h3>
+                  <p>{selectedOrder.shippingAddress?.street}</p>
+                  <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state}</p>
+                  <p>PIN: {selectedOrder.shippingAddress?.pincode}</p>
                 </div>
 
-                {/* Order Items */}
-                <div className="detail-section">
-                  <h4>🛍️ Order Items ({selectedOrder.items?.length})</h4>
-                  <div className="items-table">
-                    <div className="items-header">
-                      <span className="col-product">Product</span>
-                      <span className="col-qty">Qty</span>
-                      <span className="col-price">Price</span>
-                      <span className="col-total">Total</span>
-                    </div>
+                <div className="details-section">
+                  <h3>Order Items</h3>
+                  <div className="items-list">
                     {selectedOrder.items?.map((item, idx) => (
-                      <div key={idx} className="items-row">
-                        <span className="col-product">{item.name}</span>
-                        <span className="col-qty">x{item.quantity}</span>
-                        <span className="col-price">₹{item.price}</span>
-                        <span className="col-total">₹{item.price * item.quantity}</span>
+                      <div key={idx} className="item-row">
+                        <span className="item-name">{item.name}</span>
+                        <span className="item-qty">x{item.quantity}</span>
+                        <span className="item-price">₹{item.price}</span>
+                        <span className="item-total">₹{item.price * item.quantity}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Order Summary */}
-                <div className="order-summary">
-                  <div className="summary-row">
+                <div className="order-total-summary">
+                  <div className="total-row">
                     <span>Subtotal:</span>
                     <span>₹{selectedOrder.subtotal?.toLocaleString()}</span>
                   </div>
-                  <div className="summary-row">
+                  <div className="total-row">
                     <span>Shipping:</span>
-                    <span className={selectedOrder.subtotal > 999 ? 'free' : ''}>
-                      {selectedOrder.subtotal > 999 ? 'FREE' : '₹99'}
-                    </span>
+                    <span>{selectedOrder.subtotal > 999 ? 'FREE' : '₹99'}</span>
                   </div>
-                  <div className="summary-row total">
+                  <div className="total-row grand-total">
                     <span>Total:</span>
-                    <span className="total-amount">₹{selectedOrder.totalAmount?.toLocaleString()}</span>
+                    <span>₹{selectedOrder.totalAmount?.toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -370,360 +263,186 @@ const AdminOrders = () => {
 
       <style>{`
         .admin-orders {
+          padding: 30px;
           max-width: 1400px;
           margin: 0 auto;
-          padding: 30px;
         }
 
-        /* Header */
         .page-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 30px;
-          flex-wrap: wrap;
-          gap: 20px;
+          margin-bottom: 25px;
         }
 
         .page-header h1 {
           font-size: 28px;
           color: #333;
-          margin-bottom: 5px;
+          margin: 0;
         }
 
-        .subtitle {
-          color: #666;
-          font-size: 14px;
-        }
-
-        .stats-badge {
+        .stats-info {
           display: flex;
           gap: 15px;
         }
 
         .stat-badge {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 10px 18px;
-          border-radius: 12px;
-          min-width: 90px;
-        }
-
-        .stat-badge.total {
+          padding: 8px 16px;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
+          border-radius: 8px;
+          font-weight: 500;
         }
 
-        .stat-badge.processing {
-          background: #fef3c7;
-          color: #f59e0b;
-        }
-
-        .stat-badge.delivered {
-          background: #d1fae5;
-          color: #10b981;
-        }
-
-        .stat-number {
-          font-size: 24px;
-          font-weight: 700;
-        }
-
-        .stat-label {
-          font-size: 11px;
-          opacity: 0.9;
-        }
-
-        /* Filters */
-        .filters-section {
+        .filters-bar {
           display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 30px;
-          flex-wrap: wrap;
           gap: 20px;
+          margin-bottom: 25px;
         }
 
         .search-box {
-          position: relative;
           flex: 1;
+          position: relative;
           max-width: 350px;
-        }
-
-        .search-icon {
-          position: absolute;
-          left: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          font-size: 16px;
-          opacity: 0.5;
         }
 
         .search-input {
           width: 100%;
-          padding: 10px 40px 10px 40px;
+          padding: 10px 15px 10px 40px;
           border: 2px solid #e1e1e1;
-          border-radius: 10px;
+          border-radius: 8px;
           font-size: 14px;
-          transition: all 0.3s;
         }
 
         .search-input:focus {
           outline: none;
           border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .clear-search {
+        .search-icon {
           position: absolute;
-          right: 12px;
+          left: 12px;
           top: 50%;
           transform: translateY(-50%);
-          background: none;
-          border: none;
           font-size: 16px;
-          cursor: pointer;
-          color: #999;
+          opacity: 0.5;
         }
 
-        .status-filters {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-
-        .filter-btn {
-          padding: 8px 14px;
-          background: white;
+        .status-filter {
+          padding: 10px 15px;
           border: 2px solid #e1e1e1;
-          border-radius: 30px;
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.3s;
-          position: relative;
+          border-radius: 8px;
+          font-size: 14px;
+          min-width: 150px;
         }
 
-        .filter-btn:hover {
-          border-color: #667eea;
+        .orders-table-container {
+          background: white;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          overflow-x: auto;
+        }
+
+        .orders-table {
+          width: 100%;
+          border-collapse: collapse;
+          min-width: 900px;
+        }
+
+        .orders-table th {
+          background: #f8f9fa;
+          padding: 15px;
+          text-align: left;
+          font-weight: 600;
+          color: #555;
+          border-bottom: 2px solid #dee2e6;
+        }
+
+        .orders-table td {
+          padding: 15px;
+          border-bottom: 1px solid #eee;
+          vertical-align: middle;
+        }
+
+        .order-id {
+          font-weight: 600;
           color: #667eea;
         }
 
-        .filter-btn.active {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border-color: transparent;
-        }
-
-        .filter-count {
-          position: absolute;
-          top: -6px;
-          right: -6px;
-          background: #ff4757;
-          color: white;
-          font-size: 10px;
-          padding: 2px 5px;
-          border-radius: 20px;
-        }
-
-        /* Orders Grid */
-        .orders-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-          gap: 24px;
-        }
-
-        .order-card {
-          background: white;
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-          transition: all 0.3s;
-        }
-
-        .order-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-        }
-
-        .order-card-header {
-          padding: 16px 20px;
-          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid #e1e1e1;
-        }
-
-        .order-id-section {
+        .customer-info {
           display: flex;
           flex-direction: column;
         }
 
-        .order-id-label {
-          font-size: 10px;
+        .customer-info strong {
+          color: #333;
+        }
+
+        .customer-info small {
           color: #999;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .order-id-value {
-          font-size: 14px;
-          font-weight: 700;
-          color: #333;
-        }
-
-        .order-date {
-          display: flex;
-          align-items: center;
-          gap: 6px;
           font-size: 12px;
-          color: #666;
         }
 
-        .order-card-body {
-          padding: 20px;
-        }
-
-        /* Customer Section */
-        .customer-section {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          margin-bottom: 20px;
-          padding-bottom: 15px;
-          border-bottom: 1px solid #f0f0f0;
-        }
-
-        .customer-avatar {
-          width: 50px;
-          height: 50px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 20px;
+        .order-total {
           font-weight: 600;
-          color: white;
-        }
-
-        .customer-info {
-          flex: 1;
-        }
-
-        .customer-name {
-          font-size: 16px;
-          font-weight: 600;
-          color: #333;
-          margin: 0 0 2px 0;
-        }
-
-        .customer-email {
-          font-size: 12px;
-          color: #666;
-          margin: 0 0 2px 0;
-        }
-
-        .customer-phone {
-          font-size: 11px;
-          color: #999;
-          margin: 0;
-        }
-
-        /* Order Details */
-        .order-details {
-          margin-bottom: 16px;
-        }
-
-        .detail-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 8px;
-          font-size: 13px;
-        }
-
-        .detail-label {
-          color: #666;
-        }
-
-        .detail-value {
-          color: #333;
-          font-weight: 500;
-        }
-
-        .detail-value.amount {
-          color: #667eea;
-          font-weight: 700;
-        }
-
-        /* Status Section */
-        .status-section {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-top: 10px;
-        }
-
-        .current-status {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: 20px;
-          font-size: 13px;
-          font-weight: 600;
+          color: #28a745;
         }
 
         .status-select {
-          padding: 6px 12px;
-          border: 2px solid #e1e1e1;
-          border-radius: 8px;
-          font-size: 12px;
-          cursor: pointer;
-        }
-
-        .order-card-footer {
-          padding: 15px 20px;
-          background: #fafafa;
-          border-top: 1px solid #f0f0f0;
-        }
-
-        .view-order-btn {
-          width: 100%;
-          padding: 10px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          padding: 6px 10px;
           border: none;
-          border-radius: 8px;
-          font-size: 14px;
+          border-radius: 4px;
+          font-size: 12px;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.3s;
         }
 
-        .view-order-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        .status-processing {
+          background: #fff3cd;
+          color: #856404;
         }
 
-        /* No Results */
-        .no-results {
-          grid-column: 1 / -1;
+        .status-confirmed {
+          background: #cce5ff;
+          color: #004085;
+        }
+
+        .status-shipped {
+          background: #d1ecf1;
+          color: #0c5460;
+        }
+
+        .status-delivered {
+          background: #d4edda;
+          color: #155724;
+        }
+
+        .status-cancelled {
+          background: #f8d7da;
+          color: #721c24;
+        }
+
+        .view-btn {
+          padding: 5px 12px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+        }
+
+        .view-btn:hover {
+          background: #5a67d8;
+        }
+
+        .no-data {
           text-align: center;
-          padding: 60px 20px;
-          background: white;
-          border-radius: 16px;
+          padding: 40px;
+          color: #999;
         }
 
-        .no-results-icon {
-          font-size: 60px;
-          margin-bottom: 16px;
-          opacity: 0.5;
-        }
-
-        /* Modal */
+        /* Modal Styles */
         .modal-overlay {
           position: fixed;
           top: 0;
@@ -735,21 +454,19 @@ const AdminOrders = () => {
           align-items: center;
           justify-content: center;
           z-index: 1000;
-          animation: fadeIn 0.3s ease;
         }
 
         .modal-content {
           background: white;
-          border-radius: 20px;
+          border-radius: 12px;
           width: 90%;
-          max-width: 700px;
-          max-height: 85vh;
+          max-width: 600px;
+          max-height: 80vh;
           overflow-y: auto;
-          animation: slideUp 0.3s ease;
         }
 
         .modal-header {
-          padding: 20px 24px;
+          padding: 20px;
           border-bottom: 2px solid #f0f0f0;
           display: flex;
           justify-content: space-between;
@@ -757,16 +474,9 @@ const AdminOrders = () => {
           position: sticky;
           top: 0;
           background: white;
-          z-index: 10;
         }
 
-        .modal-title {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .modal-title h2 {
+        .modal-header h2 {
           font-size: 20px;
           color: #333;
           margin: 0;
@@ -775,119 +485,110 @@ const AdminOrders = () => {
         .close-btn {
           background: none;
           border: none;
-          font-size: 28px;
+          font-size: 24px;
           cursor: pointer;
-          color: #999;
-        }
-
-        .close-btn:hover {
-          color: #ff4757;
+          color: #666;
         }
 
         .modal-body {
-          padding: 24px;
+          padding: 20px;
         }
 
-        .order-header-info {
+        .details-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
-          margin-bottom: 24px;
-          padding-bottom: 20px;
+          gap: 15px;
+          margin-bottom: 20px;
+          padding-bottom: 15px;
           border-bottom: 1px solid #f0f0f0;
         }
 
-        .info-box {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .info-label {
+        .details-grid label {
           font-size: 11px;
           color: #999;
           text-transform: uppercase;
+          display: block;
         }
 
-        .info-value {
-          font-size: 14px;
+        .details-grid p {
+          margin: 5px 0 0;
           font-weight: 600;
           color: #333;
         }
 
-        .detail-section {
-          margin-bottom: 24px;
+        .status-badge {
+          display: inline-block;
+          padding: 4px 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 600;
         }
 
-        .detail-section h4 {
+        .details-section {
+          margin-bottom: 20px;
+          padding-bottom: 15px;
+          border-bottom: 1px solid #f0f0f0;
+        }
+
+        .details-section h3 {
           font-size: 16px;
           color: #333;
-          margin-bottom: 12px;
+          margin-bottom: 10px;
         }
 
-        .customer-details p {
-          margin: 0 0 6px 0;
-          font-size: 14px;
+        .info-row {
+          margin-bottom: 8px;
+        }
+
+        .info-row span {
+          color: #666;
+          width: 80px;
+          display: inline-block;
+        }
+
+        .details-section p {
+          margin: 5px 0;
           color: #555;
         }
 
-        .address-box {
-          background: #f8f9fa;
-          padding: 16px;
-          border-radius: 12px;
-        }
-
-        .address-box p {
-          margin: 0 0 6px 0;
-          font-size: 14px;
-          color: #555;
-        }
-
-        .items-table {
+        .items-list {
           border: 1px solid #f0f0f0;
-          border-radius: 12px;
+          border-radius: 8px;
           overflow: hidden;
         }
 
-        .items-header {
+        .item-row {
           display: grid;
           grid-template-columns: 2fr 0.5fr 1fr 1fr;
-          background: #f8f9fa;
-          padding: 12px;
-          font-size: 12px;
-          font-weight: 600;
-          color: #666;
+          padding: 10px;
           border-bottom: 1px solid #f0f0f0;
-        }
-
-        .items-row {
-          display: grid;
-          grid-template-columns: 2fr 0.5fr 1fr 1fr;
-          padding: 12px;
           font-size: 13px;
-          color: #333;
-          border-bottom: 1px solid #f0f0f0;
         }
 
-        .items-row:last-child {
+        .item-row:last-child {
           border-bottom: none;
         }
 
-        .order-summary {
-          background: #f8f9fa;
-          padding: 16px;
-          border-radius: 12px;
-          margin-top: 20px;
+        .item-name {
+          font-weight: 500;
+          color: #333;
         }
 
-        .summary-row {
+        .order-total-summary {
+          background: #f8f9fa;
+          padding: 15px;
+          border-radius: 8px;
+          margin-top: 15px;
+        }
+
+        .total-row {
           display: flex;
           justify-content: space-between;
           margin-bottom: 8px;
           font-size: 14px;
         }
 
-        .summary-row.total {
+        .grand-total {
           margin-top: 8px;
           padding-top: 8px;
           border-top: 1px solid #e1e1e1;
@@ -895,45 +596,19 @@ const AdminOrders = () => {
           font-size: 16px;
         }
 
-        .total-amount {
-          color: #667eea;
-        }
-
-        .free {
-          color: #10b981;
-        }
-
         .modal-actions {
           display: flex;
           justify-content: flex-end;
           margin-top: 20px;
-          padding-top: 20px;
-          border-top: 1px solid #f0f0f0;
         }
 
         .close-modal-btn {
-          padding: 10px 24px;
+          padding: 8px 20px;
           background: #f8f9fa;
           color: #666;
           border: 2px solid #e1e1e1;
-          border-radius: 8px;
+          border-radius: 6px;
           cursor: pointer;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-          from {
-            transform: translateY(30px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
         }
 
         @media (max-width: 768px) {
@@ -944,43 +619,15 @@ const AdminOrders = () => {
           .page-header {
             flex-direction: column;
             align-items: flex-start;
+            gap: 10px;
           }
 
-          .stats-badge {
-            width: 100%;
-            justify-content: space-between;
-          }
-
-          .filters-section {
+          .filters-bar {
             flex-direction: column;
           }
 
           .search-box {
             max-width: 100%;
-            width: 100%;
-          }
-
-          .status-filters {
-            width: 100%;
-            justify-content: stretch;
-          }
-
-          .filter-btn {
-            flex: 1;
-            text-align: center;
-          }
-
-          .orders-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .order-header-info {
-            grid-template-columns: 1fr;
-          }
-
-          .items-header, .items-row {
-            grid-template-columns: 1.5fr 0.5fr 1fr 1fr;
-            font-size: 11px;
           }
         }
       `}</style>
