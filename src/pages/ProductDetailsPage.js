@@ -121,19 +121,17 @@ const ProductDetailsPage = () => {
 
             {product.specifications && Object.keys(product.specifications).length > 0 && (
               <div className="product-specifications">
-                <h3>Specifications</h3>
-                <table className="specs-table">
-                  <tbody>
-                    {Object.entries(product.specifications).map(([key, value]) => (
-                      <tr key={key}>
-                        <td className="spec-key">{key}</td>
-                        <td className="spec-value">{value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <h3>Technical Specifications</h3>
+              <div className="specifications-table">
+              {Object.entries(product.specifications).map(([key, value]) => (
+                <div key={key} className="spec-row">
+                  <div className="spec-label">{key}</div>
+                  <div className="spec-value">{value}</div>
+                  </div>
+                  ))}
+                </div>
               </div>
-            )}
+              )}
 
             <div className="product-actions">
               <div className="quantity-selector">

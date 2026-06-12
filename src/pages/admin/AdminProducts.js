@@ -15,6 +15,7 @@ const AdminProducts = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [specifications, setSpecifications] = useState([{ key: '', value: '' }]);
   useAuth();
 
   const categories = [
@@ -58,10 +59,6 @@ const AdminProducts = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
-    // Log the change for debugging
-    console.log(`Field ${name} changed to:`, value);
-    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -85,6 +82,23 @@ const AdminProducts = () => {
     }
   };
 
+  // Specification handlers
+  const addSpecification = () => {
+    setSpecifications([...specifications, { key: '', value: '' }]);
+  };
+
+  const removeSpecification = (index) => {
+    const updated = [...specifications];
+    updated.splice(index, 1);
+    setSpecifications(updated);
+  };
+
+  const handleSpecificationChange = (index, field, value) => {
+    const updated = [...specifications];
+    updated[index][field] = value;
+    setSpecifications(updated);
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -98,6 +112,7 @@ const AdminProducts = () => {
     setImageFile(null);
     setImagePreview('');
     setEditingProduct(null);
+    setSpecifications([{ key: '', value: '' }]);
   };
 
   const handleEdit = (product) => {
@@ -114,6 +129,18 @@ const AdminProducts = () => {
     if (product.images && product.images[0]) {
       setImagePreview(product.images[0].url);
     }
+    
+    // Load specifications from product
+    if (product.specifications && Object.keys(product.specifications).length > 0) {
+      const specsArray = Object.entries(product.specifications).map(([key, value]) => ({
+        key,
+        value
+      }));
+      setSpecifications(specsArray);
+    } else {
+      setSpecifications([{ key: '', value: '' }]);
+    }
+    
     setShowModal(true);
   };
 
@@ -134,17 +161,16 @@ const AdminProducts = () => {
     e.preventDefault();
 
     try {
-      // Log the current form data for debugging
-      console.log('Current form data before validation:', formData);
-      
-      // Validate form with proper checks
+      // Validate form
       if (!formData.name || !formData.name.trim()) {
         toast.error('Product name is required');
         return;
       }
       
-      // IMPORTANT: Check if price is valid (not empty, not NaN, greater than 0)
-      console.log('Price value:', formData.price, 'Type:', typeof formData.price);
+      if (!formData.category) {
+        toast.error('Please select a category');
+        return;
+      }
       
       if (!formData.price || formData.price === '') {
         toast.error('Price is required');
@@ -152,14 +178,11 @@ const AdminProducts = () => {
       }
       
       const priceValue = Number(formData.price);
-      console.log('Converted price value:', priceValue, 'Type:', typeof priceValue);
-      
       if (isNaN(priceValue) || priceValue <= 0) {
         toast.error('Please enter a valid price (greater than 0)');
         return;
       }
       
-      // Check stock
       if (!formData.stock || formData.stock === '') {
         toast.error('Stock quantity is required');
         return;
@@ -176,7 +199,15 @@ const AdminProducts = () => {
         return;
       }
 
-      // Prepare product data with proper number conversion
+      // Convert specifications array to object
+      const specificationsObj = {};
+      specifications.forEach(spec => {
+        if (spec.key.trim() && spec.value.trim()) {
+          specificationsObj[spec.key.trim()] = spec.value.trim();
+        }
+      });
+
+      // Prepare product data
       const productData = {
         name: formData.name.trim(),
         category: formData.category,
@@ -185,10 +216,11 @@ const AdminProducts = () => {
         stock: stockValue,
         isFeatured: formData.isFeatured || false,
         images: formData.images[0]?.url ? formData.images : [{ url: '/assets/placeholders/no-image.jpg', alt: formData.name }],
+        specifications: specificationsObj,
         createdAt: new Date().toISOString()
       };
 
-      console.log('Sending product data to backend:', JSON.stringify(productData, null, 2));
+      console.log('Sending product data:', productData);
 
       if (editingProduct) {
         await axios.put(`${process.env.REACT_APP_API_URL}/api/products/${editingProduct._id}`, productData);
@@ -203,8 +235,7 @@ const AdminProducts = () => {
       fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
-      console.error('Error response data:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+      console.error('Error response:', error.response?.data);
       
       const errorMessage = error.response?.data?.message || error.message || 'Failed to save product';
       toast.error(errorMessage);
@@ -489,6 +520,50 @@ const AdminProducts = () => {
                       placeholder="Enter product description"
                     />
                   </div>
+
+                  {/* Specifications Section */}
+                  <div className="form-group full-width specifications-section">
+                    <div className="specifications-header">
+                      <label>Product Specifications</label>
+                      <button
+                        type="button"
+                        className="add-spec-btn"
+                        onClick={addSpecification}
+                      >
+                        + Add Specification
+                      </button>
+                    </div>
+                    
+                    {specifications.map((spec, index) => (
+                      <div key={index} className="spec-row">
+                        <input
+                          type="text"
+                          placeholder="Specification name (e.g., Brand, Wattage, Size)"
+                          value={spec.key}
+                          onChange={(e) => handleSpecificationChange(index, 'key', e.target.value)}
+                          className="spec-key"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Value (e.g., RS Electrical, 25W, 10 inches)"
+                          value={spec.value}
+                          onChange={(e) => handleSpecificationChange(index, 'value', e.target.value)}
+                          className="spec-value"
+                        />
+                        {specifications.length > 1 && (
+                          <button
+                            type="button"
+                            className="remove-spec-btn"
+                            onClick={() => removeSpecification(index)}
+                            title="Remove"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <p className="spec-hint">Add product specifications like Brand, Model, Wattage, Material, etc.</p>
+                  </div>
                 </div>
 
                 <div className="form-actions">
@@ -750,7 +825,7 @@ const AdminProducts = () => {
           background: white;
           border-radius: 10px;
           width: 90%;
-          max-width: 700px;
+          max-width: 800px;
           max-height: 90vh;
           overflow-y: auto;
           animation: slideUp 0.3s ease;
@@ -850,6 +925,105 @@ const AdminProducts = () => {
 
         .checkbox-label input {
           width: auto;
+        }
+
+        /* Specifications Section */
+        .specifications-section {
+          background: #f8f9fa;
+          padding: 15px;
+          border-radius: 8px;
+          margin-top: 10px;
+        }
+
+        .specifications-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+        }
+
+        .specifications-header label {
+          font-weight: 600;
+          color: #333;
+          margin: 0;
+        }
+
+        .add-spec-btn {
+          padding: 6px 12px;
+          background: #28a745;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+          transition: all 0.3s;
+        }
+
+        .add-spec-btn:hover {
+          background: #218838;
+          transform: translateY(-1px);
+        }
+
+        .spec-row {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 10px;
+          align-items: center;
+        }
+
+        .spec-key {
+          flex: 1;
+          padding: 8px 12px;
+          border: 2px solid #e1e1e1;
+          border-radius: 6px;
+          font-size: 14px;
+          background: white;
+        }
+
+        .spec-key:focus {
+          outline: none;
+          border-color: #667eea;
+        }
+
+        .spec-value {
+          flex: 2;
+          padding: 8px 12px;
+          border: 2px solid #e1e1e1;
+          border-radius: 6px;
+          font-size: 14px;
+          background: white;
+        }
+
+        .spec-value:focus {
+          outline: none;
+          border-color: #667eea;
+        }
+
+        .remove-spec-btn {
+          width: 32px;
+          height: 32px;
+          background: #dc3545;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          transition: all 0.3s;
+        }
+
+        .remove-spec-btn:hover {
+          background: #c82333;
+          transform: scale(1.1);
+        }
+
+        .spec-hint {
+          font-size: 12px;
+          color: #999;
+          margin-top: 10px;
+          font-style: italic;
         }
 
         /* Image Upload */
@@ -976,6 +1150,14 @@ const AdminProducts = () => {
 
           .form-grid {
             grid-template-columns: 1fr;
+          }
+
+          .spec-row {
+            flex-wrap: wrap;
+          }
+          
+          .spec-key, .spec-value {
+            flex: 100%;
           }
         }
       `}</style>

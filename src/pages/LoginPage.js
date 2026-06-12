@@ -69,6 +69,9 @@ const LoginPage = () => {
                 required
                 placeholder="Enter your password"
               />
+              <div className="forgot-password-link">
+              <Link to="/forgot-password">Forgot Password?</Link>
+            </div>
             </div>
 
             {debugInfo && (
@@ -153,6 +156,21 @@ const LoginPage = () => {
         .login-form input:focus {
           outline: none;
           border-color: #667eea;
+        }
+
+        .forgot-password-link {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+          .forgot-password-link a {
+            color: #667eea;
+            text-decoration: none;
+          font-size: 13px;
+        }
+
+          .forgot-password-link a:hover {
+          text-decoration: underline;
         }
 
         .debug-info {
