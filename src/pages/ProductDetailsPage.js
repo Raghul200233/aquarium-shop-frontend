@@ -119,20 +119,19 @@ const ProductDetailsPage = () => {
               <p>{product.description}</p>
             </div>
 
-            {product.specifications && Object.keys(product.specifications).length > 0 && (
-              <div className="product-specifications">
-              <h3>Technical Specifications</h3>
-              <div className="specifications-table">
-              {Object.entries(product.specifications).map(([key, value]) => (
-                <div key={key} className="spec-row">
-                  <div className="spec-label">{key}</div>
-                  <div className="spec-value">{value}</div>
-                  </div>
-                  ))}
-                </div>
-              </div>
-              )}
-
+{product.specifications && Object.keys(product.specifications).length > 0 && (
+  <div className="product-specifications">
+    <h3>Technical Specifications</h3>
+    <div className="specifications-table">
+      {Object.entries(product.specifications).map(([key, value]) => (
+        <div key={key} className="spec-row">
+          <div className="spec-label">{key}</div>
+          <div className="spec-value">{value}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
             <div className="product-actions">
               <div className="quantity-selector">
                 <button
@@ -284,6 +283,64 @@ const ProductDetailsPage = () => {
           gap: 10px;
           margin-bottom: 20px;
         }
+
+        .product-specifications {
+  margin: 30px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.product-specifications h3 {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #667eea;
+}
+
+.specifications-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spec-row {
+  display: flex;
+  border-bottom: 1px solid #e1e1e1;
+  padding: 8px 0;
+}
+
+.spec-row:last-child {
+  border-bottom: none;
+}
+
+.spec-label {
+  width: 40%;
+  font-weight: 600;
+  color: #555;
+}
+
+.spec-value {
+  width: 60%;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .spec-row {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .spec-label {
+    width: 100%;
+  }
+  
+  .spec-value {
+    width: 100%;
+    padding-left: 15px;
+  }
+}
 
         .rating-stars { color: #ffc107; font-size: 18px; }
         .rating-count { color: #666; font-size: 14px; }
