@@ -17,7 +17,7 @@ const AdminDashboard = () => {
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState([]);
+  const [setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const { user } = useAuth();
 
